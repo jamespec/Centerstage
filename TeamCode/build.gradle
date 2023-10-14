@@ -17,8 +17,14 @@ apply from: '../build.dependencies.gradle'
 
 android {
     namespace = 'org.firstinspires.ftc.teamcode'
+    androidResources {
+        noCompress 'tflite'
+    }
 
     packagingOptions {
+        jniLibs {
+            pickFirsts += ['**/*.so']
+        }
         jniLibs.useLegacyPackaging true
     }
 }
@@ -26,4 +32,142 @@ android {
 dependencies {
     implementation project(':FtcRobotController')
     annotationProcessor files('lib/OpModeAnnotationProcessor.jar')
+}
+
+// Custom definitions may go here
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.filefilter.DirectoryFileFilter;
+import org.apache.commons.io.filefilter.RegexFileFilter;
+import java.nio.charset.StandardCharsets;
+
+
+task OnBotJava {
+    doLast {
+        int status;
+        String host = "http://192.168.43.1:8080/";
+
+        long start = System.nanoTime();
+        try {
+            URL url = new URL(host + "java/file/delete");
+
+            HttpURLConnection con = (HttpURLConnection) url.openConnection();
+            con.setConnectTimeout(5000);
+            con.setReadTimeout(5000);
+            con.setDoOutput(true);
+            con.setRequestMethod("POST");
+
+            DataOutputStream out = new DataOutputStream(con.getOutputStream());
+            out.writeBytes("delete=[\"src\"]");
+            out.flush();
+            out.close();
+
+            status = con.getResponseCode();
+            con.disconnect();
+            if (status > 299) {
+                throw new Exception("Delete returned: $status");
+            }
+
+            Collection<File> files = FileUtils.listFiles(
+                    new File("./src/main/java"),
+                    new RegexFileFilter("^(.*\\.[jJ][aA][vV][aA]?)"),
+                    DirectoryFileFilter.DIRECTORY
+            );
+
+            for (File file : files) {
+                String name = host + "java/file/save?f=/src" + file.toString().replaceAll("\\\\", "/").substring(15);
+                if( name.contains("/x/") )
+                    continue;
+
+                println( file.name );
+                url = new URL(name);
+
+                con = (HttpURLConnection) url.openConnection();
+                con.setConnectTimeout(5000);
+                con.setReadTimeout(5000);
+                con.setDoOutput(true);
+
+                HashMap<String, String> parameters = new HashMap<>();
+                //StandardCharsets.UTF_8
+                String sourceText = new String(Objects.requireNonNull(file).getText());
+                parameters.put("data", sourceText);
+
+                out = new DataOutputStream(con.getOutputStream());
+                out.writeBytes(getParamsString(parameters));
+                out.flush();
+                out.close();
+
+                status = con.getResponseCode();
+                con.disconnect();
+                if (status > 299) {
+                    throw new Exception("Unable to upload: ${file.name}")
+                }
+            }
+
+            url = new URL(host + "java/build/start");
+
+            con = (HttpURLConnection) url.openConnection();
+            con.setConnectTimeout(5000);
+            con.setReadTimeout(5000);
+
+            status = con.getResponseCode();
+            con.disconnect();
+            if (status > 299) {
+                throw new Exception("Unable to start build")
+            }
+
+            boolean waiting = true;
+            while(waiting) {
+                url = new URL(host + "java/build/status");
+                con = (HttpURLConnection) url.openConnection();
+                con.setConnectTimeout(5000);
+                con.setReadTimeout(5000);
+
+                String output = new String(con.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
+                status = con.getResponseCode();
+                con.disconnect();
+                if (status > 299) {
+                    throw new Exception("Unable to get build status")
+                }
+                waiting = output.startsWith("false", 17);
+            }
+
+            url = new URL(host + "java/build/log");
+            con = (HttpURLConnection) url.openConnection();
+            con.setConnectTimeout(5000);
+            con.setReadTimeout(5000);
+
+            String output = new String(con.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
+            status = con.getResponseCode();
+            con.disconnect();
+            if( status > 299 ) {
+                throw new Exception( "Unable to fetch build log");
+            }
+
+            if (output.equals("")) {
+                println("Build SUCCESSFUL\n\nBuild finished in " + Math.round((System.nanoTime() - start) / 100000000d) / 10d );
+            } else {
+                println(output);
+                //output = ("\n" + output).replaceAll("\n(.*)\\((.*:.*)\\):", "\n" + Output.projectLoc + "/TeamCode/src/main/java/$1:$2");
+                println("\nBuild FAILED\n\nBuild finished in " + Math.round((System.nanoTime() - start) / 100000000d) / 10d);
+            }
+        } catch (Exception e) {
+            println(e);
+        }
+    }
+}
+
+String getParamsString(Map<String, String> params) {
+    StringBuilder result = new StringBuilder();
+
+    for (Map.Entry<String, String> entry : params.entrySet()) {
+        result.append(URLEncoder.encode(entry.getKey(), StandardCharsets.UTF_8));
+        result.append("=");
+        result.append(URLEncoder.encode(entry.getValue(), StandardCharsets.UTF_8));
+        result.append("&");
+    }
+
+    String resultString = result.toString();
+    return resultString.length() > 0
+            ? resultString.substring(0, resultString.length() - 1)
+            : resultString;
 }
