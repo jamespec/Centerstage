@@ -61,6 +61,9 @@ public class SensorREV2mDistance extends LinearOpMode {
 
     @Override
     public void runOpMode() {
+        boolean LED_ON = false;
+        boolean LED_OFF = true;
+
         // you can use this as a regular DistanceSensor.
         sensorDistance = hardwareMap.get(DistanceSensor.class, "sensor_distance");
         green = hardwareMap.get(DigitalChannel.class, "green");
@@ -95,16 +98,16 @@ public class SensorREV2mDistance extends LinearOpMode {
             telemetry.update();
 
             if( distanceInches > 10 ) {
-                green.setState(false);
-                red.setState(true);
+                green.setState(LED_ON);
+                red.setState(LED_OFF);
             }
             else if( distanceInches > 5 ) {
-                green.setState(false);
-                red.setState(false);
+                green.setState(LED_ON);
+                red.setState(LED_ON);
             }
             else {
-                green.setState(true);
-                red.setState(false);
+                green.setState(LED_OFF);
+                red.setState(LED_ON);
             }
         }
     }
