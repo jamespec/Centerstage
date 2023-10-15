@@ -103,6 +103,7 @@ task OnBotJava {
                 }
             }
 
+            println( "\nBuilding...");
             url = new URL(host + "java/build/start");
 
             con = (HttpURLConnection) url.openConnection();
@@ -150,8 +151,10 @@ task OnBotJava {
                 //output = ("\n" + output).replaceAll("\n(.*)\\((.*:.*)\\):", "\n" + Output.projectLoc + "/TeamCode/src/main/java/$1:$2");
                 println("\nBuild FAILED\n\nBuild finished in " + Math.round((System.nanoTime() - start) / 100000000d) / 10d);
             }
-        } catch (Exception e) {
-            println(e);
+        } catch (SocketTimeoutException e) {
+            throw new Exception("Check Wifi Connection to Robot!")
+        } catch(Exception e) {
+            throw e;
         }
     }
 }
