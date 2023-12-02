@@ -30,6 +30,9 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.PIDCoefficients;
+import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.util.Range;
@@ -106,8 +109,10 @@ public class RobotAutoDriveToAprilTagOmni extends LinearOpMode
     private DcMotor leftFrontDrive   = null;  //  Used to control the left front drive wheel
     private DcMotor rightFrontDrive  = null;  //  Used to control the right front drive wheel
     private DcMotor leftBackDrive    = null;  //  Used to control the left back drive wheel
-    private DcMotor rightBackDrive   = null;  //  Used to control the right back drive wheel
-
+    private DcMotor rightBackDrive   = null;
+    private DcMotorEx arm = null;
+    private Servo intake = null;//  Used to control the right back drive wheel
+    
     private static final boolean USE_WEBCAM = true;  // Set true to use a webcam, or false for a phone camera
     private static final int DESIRED_TAG_ID = -1;     // Choose the tag you want to approach or set to -1 for ANY tag.
     private VisionPortal visionPortal;               // Used to manage the video source.
@@ -131,6 +136,9 @@ public class RobotAutoDriveToAprilTagOmni extends LinearOpMode
         rightFrontDrive = hardwareMap.get(DcMotor.class, "right_front");
         leftBackDrive  = hardwareMap.get(DcMotor.class, "left_back");
         rightBackDrive = hardwareMap.get(DcMotor.class, "right_back");
+        intake     = hardwareMap.get(Servo.class, "intake");
+        DcMotor arm = hardwareMap.get(DcMotor.class, "arm");
+        
 
         // To drive forward, most robots need the motor on one side to be reversed, because the axles point in opposite directions.
         // When run, this OpMode should start both motors driving forward. So adjust these two lines based on your first test drive.
@@ -139,6 +147,11 @@ public class RobotAutoDriveToAprilTagOmni extends LinearOpMode
         leftBackDrive.setDirection(DcMotor.Direction.FORWARD);
         rightFrontDrive.setDirection(DcMotor.Direction.REVERSE);
         rightBackDrive.setDirection(DcMotor.Direction.REVERSE);
+        arm.setDirection(DcMotor.Direction.FORWARD);
+        arm.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        arm.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        //arm.setMode(DcMotor.setZeroPowerBehavior(com.qualcomm.robotcore.hardware.DcMotor));
+        //arm.setMode(DcMotor.RunMode.)
 
         if (USE_WEBCAM)
             setManualExposure(6, 250);  // Use low exposure time to reduce motion blur
@@ -213,19 +226,66 @@ public class RobotAutoDriveToAprilTagOmni extends LinearOpMode
             // Apply desired axes motions to the drivetrain.
             moveRobot(drive, strafe, turn);
             sleep(10);
-        }
-    }
+            
+            int armPos = 0;//0 start, -650 is backwards angle
+            //armPos = arm.getCurrentPosition();
+        
+            armPos = arm.getCurrentPosition();
 
-    /**
-     * Move robot according to desired axes motions
-     * <p>
-     * Positive X is forward
-     * <p>
-     * Positive Y is strafe left
-     * <p>
+            
+            double power = -gamepad2.left_stick_y / 15.0;
+            boolean setArmT = gamepad2.a;
+            boolean setArmZ = gamepad2.b;
+            boolean intakeDrop = gamepad2.x;
+            boolean intakeGrab = gamepad2.y;
+            
+            
+            //arm.setTargetPosition(armPos);
+            //arm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            arm.setPower( power );
+            if (setArmT == true ){
+                PIDCoefficients pidController = new PIDCoefficients(0.3,0.00001,-0.1);
+                arm.setTargetPosition(-522);
+                arm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                arm.setPower(0.3);
+
+                while(arm.isBusy()) {
+                    sleep(1000);
+                }
+            }
+
+            if (setArmZ == true ){
+                //setTimeout(arm.setPower(power), 700);
+
+                PIDCoefficients pidController = new PIDCoefficients(0.02,0.0,0.0);
+                arm.setTargetPosition(0);
+                arm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                arm.setPower(0.035);
+                while(arm.isBusy()) {
+                    sleep(1000);
+
+                    if (intakeGrab == true){
+                        intake.setPosition(0.35);
+                    }
+                    if (intakeDrop == true){
+                        intake.setPosition(0.125);
+                    }
+
+                }
+            }
+
+            /**
+             * Move robot according to desired axes motions
+             * <p>
+             * Positive X is forward
+             * <p>
+             * Positive Y is strafe left
+             * <p>
      * Positive Yaw is counter-clockwise
      */
-    public void moveRobot(double x, double y, double yaw) {
+        }
+    }
+            public void moveRobot(double x, double y, double yaw) {
         // Calculate wheel powers.
         double leftFrontPower    =  x -y -yaw;
         double rightFrontPower   =  x +y +yaw;
