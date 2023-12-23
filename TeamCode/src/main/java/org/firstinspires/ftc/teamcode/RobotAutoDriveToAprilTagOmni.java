@@ -30,11 +30,9 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
-import com.qualcomm.robotcore.hardware.DcMotorEx;
-import com.qualcomm.robotcore.hardware.PIDCoefficients;
-import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.hardware.camera.BuiltinCameraDirection;
@@ -110,7 +108,7 @@ public class RobotAutoDriveToAprilTagOmni extends LinearOpMode
     private DcMotor rightFrontDrive  = null;  //  Used to control the right front drive wheel
     private DcMotor leftBackDrive    = null;  //  Used to control the left back drive wheel
     private DcMotor rightBackDrive   = null;
-    private DcMotorEx arm = null;
+    private DcMotor arm = null;
     private Servo intake = null;//  Used to control the right back drive wheel
     
     private static final boolean USE_WEBCAM = true;  // Set true to use a webcam, or false for a phone camera
@@ -136,9 +134,8 @@ public class RobotAutoDriveToAprilTagOmni extends LinearOpMode
         rightFrontDrive = hardwareMap.get(DcMotor.class, "right_front");
         leftBackDrive  = hardwareMap.get(DcMotor.class, "left_back");
         rightBackDrive = hardwareMap.get(DcMotor.class, "right_back");
-        intake     = hardwareMap.get(Servo.class, "intake");
-        DcMotor arm = hardwareMap.get(DcMotor.class, "arm");
-        
+        intake = hardwareMap.get(Servo.class, "intake");
+        arm = hardwareMap.get(DcMotor.class, "arm");
 
         // To drive forward, most robots need the motor on one side to be reversed, because the axles point in opposite directions.
         // When run, this OpMode should start both motors driving forward. So adjust these two lines based on your first test drive.
@@ -148,10 +145,7 @@ public class RobotAutoDriveToAprilTagOmni extends LinearOpMode
         rightFrontDrive.setDirection(DcMotor.Direction.REVERSE);
         rightBackDrive.setDirection(DcMotor.Direction.REVERSE);
         arm.setDirection(DcMotor.Direction.FORWARD);
-        arm.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         arm.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        //arm.setMode(DcMotor.setZeroPowerBehavior(com.qualcomm.robotcore.hardware.DcMotor));
-        //arm.setMode(DcMotor.RunMode.)
 
         if (USE_WEBCAM)
             setManualExposure(6, 250);  // Use low exposure time to reduce motion blur
@@ -200,8 +194,8 @@ public class RobotAutoDriveToAprilTagOmni extends LinearOpMode
             }
 
             // If Left Bumper is being pressed, AND we have found the desired target, Drive to target Automatically .
-            if (gamepad1.left_bumper && targetFound) {
-
+            if (gamepad1.left_bumper && targetFound)
+            {
                 // Determine heading, range and Yaw (tag image rotation) error so we can use them to control the robot automatically.
                 double  rangeError      = (desiredTag.ftcPose.range - DESIRED_DISTANCE);
                 double  headingError    = desiredTag.ftcPose.bearing;
@@ -213,79 +207,38 @@ public class RobotAutoDriveToAprilTagOmni extends LinearOpMode
                 strafe = Range.clip(-yawError * STRAFE_GAIN, -MAX_AUTO_STRAFE, MAX_AUTO_STRAFE);
 
                 telemetry.addData("Auto","Drive %5.2f, Strafe %5.2f, Turn %5.2f ", drive, strafe, turn);
-            } else {
-
+            }
+            else
+            {
                 // drive using manual POV Joystick mode.  Slow things down to make the robot more controlable.
                 drive  = -gamepad1.left_stick_y  / 2.0;  // Reduce drive rate to 50%.
                 strafe = -gamepad1.left_stick_x  / 2.0;  // Reduce strafe rate to 50%.
                 turn   = -gamepad1.right_stick_x / 3.0;  // Reduce turn rate to 33%.
                 telemetry.addData("Manual","Drive %5.2f, Strafe %5.2f, Turn %5.2f ", drive, strafe, turn);
             }
-            telemetry.update();
 
             // Apply desired axes motions to the drivetrain.
             moveRobot(drive, strafe, turn);
+
+            double armPower = gamepad1.right_trigger - gamepad1.left_trigger;
+            arm.setPower(armPower);
+
+            telemetry.addData("Arm","%3.0f", armPower);
+            telemetry.update();
+
+            if ( gamepad1.x ) {
+                // Grab
+                intake.setPosition(0.35);
+            }
+            if (gamepad1.y) {
+                // Drop
+                intake.setPosition(0);
+            }
+
             sleep(10);
-            
-            int armPos = 0;//0 start, -650 is backwards angle
-            //armPos = arm.getCurrentPosition();
-        
-            armPos = arm.getCurrentPosition();
-
-            
-            double power = -gamepad2.left_stick_y / 15.0;
-            boolean setArmT = gamepad2.a;
-            boolean setArmZ = gamepad2.b;
-            boolean intakeDrop = gamepad2.x;
-            boolean intakeGrab = gamepad2.y;
-            
-            
-            //arm.setTargetPosition(armPos);
-            //arm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-            arm.setPower( power );
-            if (setArmT == true ){
-                PIDCoefficients pidController = new PIDCoefficients(0.3,0.00001,-0.1);
-                arm.setTargetPosition(-522);
-                arm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                arm.setPower(0.3);
-
-                while(arm.isBusy()) {
-                    sleep(1000);
-                }
-            }
-
-            if (setArmZ == true ){
-                //setTimeout(arm.setPower(power), 700);
-
-                PIDCoefficients pidController = new PIDCoefficients(0.02,0.0,0.0);
-                arm.setTargetPosition(0);
-                arm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                arm.setPower(0.035);
-                while(arm.isBusy()) {
-                    sleep(1000);
-
-                    if (intakeGrab == true){
-                        intake.setPosition(0.35);
-                    }
-                    if (intakeDrop == true){
-                        intake.setPosition(0.125);
-                    }
-
-                }
-            }
-
-            /**
-             * Move robot according to desired axes motions
-             * <p>
-             * Positive X is forward
-             * <p>
-             * Positive Y is strafe left
-             * <p>
-     * Positive Yaw is counter-clockwise
-     */
         }
     }
-            public void moveRobot(double x, double y, double yaw) {
+    public void moveRobot(double x, double y, double yaw) {
         // Calculate wheel powers.
         double leftFrontPower    =  x -y -yaw;
         double rightFrontPower   =  x +y +yaw;
