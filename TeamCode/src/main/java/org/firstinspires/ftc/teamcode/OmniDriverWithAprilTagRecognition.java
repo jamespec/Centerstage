@@ -90,9 +90,9 @@ import java.util.concurrent.TimeUnit;
  *
  */
 
-@TeleOp(name="Omni Drive To AprilTag", group = "Concept")
+@TeleOp(name="Omni Drive With AprilTag", group = "Concept")
 
-public class RobotAutoDriveToAprilTagOmni extends LinearOpMode
+public class OmniDriverWithAprilTagRecognition extends LinearOpMode
 {
     // Adjust these numbers to suit your robot.
     final double DESIRED_DISTANCE = 12.0; //  this is how close the camera should get to the target (inches)
@@ -116,7 +116,7 @@ public class RobotAutoDriveToAprilTagOmni extends LinearOpMode
 
     final double MAX_AUTO_SPEED = 0.5;   //  Clip the approach speed to this max value (adjust for your robot)
     final double MAX_AUTO_STRAFE= 0.5;   //  Clip the approach speed to this max value (adjust for your robot)
-    final double MAX_AUTO_TURN  = 0.3;   //  Clip the turn speed to this max value (adjust for your robot)
+    final double MAX_AUTO_TURN  = 0.5;   //  Clip the turn speed to this max value (adjust for your robot) NOTE!!!! Was 0.3
 
     private DcMotor leftFrontDrive   = null;  //  Used to control the left front drive wheel
     private DcMotor rightFrontDrive  = null;  //  Used to control the right front drive wheel
@@ -166,6 +166,7 @@ public class RobotAutoDriveToAprilTagOmni extends LinearOpMode
         imu = hardwareMap.get(IMU.class, "imu");
         imu.initialize(new IMU.Parameters(orientationOnRobot));
         double lastHeading = getHeading();
+        boolean autoturning = false;
 
         // To drive forward, most robots need the motor on one side to be reversed, because the axles point in opposite directions.
         // When run, this OpMode should start both motors driving forward. So adjust these two lines based on your first test drive.
@@ -175,6 +176,8 @@ public class RobotAutoDriveToAprilTagOmni extends LinearOpMode
         rightFrontDrive.setDirection(DcMotor.Direction.FORWARD);
         rightBackDrive.setDirection(DcMotor.Direction.FORWARD);
         arm.setDirection(DcMotor.Direction.FORWARD);
+
+        arm.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         arm.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
         if (USE_WEBCAM)
@@ -238,37 +241,83 @@ public class RobotAutoDriveToAprilTagOmni extends LinearOpMode
 
                 telemetry.addData("Auto","Drive %5.2f, Strafe %5.2f, Turn %5.2f ", drive, strafe, turn);
             }
+            else if( gamepad1.y ) {
+                arm.setTargetPosition(5500);
+                arm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                arm.setPower(1.0);
+                while( arm.isBusy() )
+                    sleep(10);
+
+                arm.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+                lastHeading = lastHeading + 180;
+                autoturning = true;
+            }
+            else if( gamepad1.x ) {
+                arm.setTargetPosition(7000);
+                arm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                arm.setPower(1.0);
+                while( arm.isBusy() )
+                    sleep(10);
+
+                arm.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            }
             else
             {
-                // drive using manual POV Joystick mode.  Slow things down to make the robot more controlable.
-                drive  = -gamepad1.left_stick_y  / 2.0;  // Reduce drive rate to 50%.
-                strafe = -gamepad1.left_stick_x  / 2.0;  // Reduce strafe rate to 50%.
-                turn   = gamepad1.right_stick_x / 3.0;  // Reduce turn rate to 33%.
+                // Trying new Fast/Slow controller.
+                // Left Joystick is full power move
+                // Right Joystick is half power move
+                // Left/Right triggers turn
+                // if both right and left deflected use right (slow)
+
+                if( Math.abs(gamepad1.right_stick_x) > 0.01 || Math.abs(gamepad1.right_stick_y) > 0.01 ) {
+                    drive = -gamepad1.right_stick_y / 3.0;  // Reduce drive rate to 33%.
+                    strafe = -gamepad1.right_stick_x / 3.0;  // Reduce strafe rate to 33%.
+                }
+                else {
+                    // drive using manual POV Joystick mode.  Slow things down to make the robot more controlable.
+                    drive = -gamepad1.left_stick_y / 1.5;  // Reduce drive rate to 66%.
+                    strafe = -gamepad1.left_stick_x / 1.5;  // Reduce strafe rate to 66%.
+                }
+                double triggerTurn = (gamepad1.right_trigger - gamepad1.left_trigger)/3.0;
+                turn   = triggerTurn; // gamepad1.right_stick_x / 3.0;  // Reduce turn rate to 33%.
                 telemetry.addData("Manual","Drive %5.2f, Strafe %5.2f, Turn %5.2f ", drive, strafe, turn);
-            }
 
-            double currentHeading = getHeading();
-            if( Math.abs(turn) > 0.05 ) {
-                // Turn is requested
-                lastHeading = getHeading();
-            }
-            else {
-                // No turn desired, hold last heading
+                double currentHeading = getHeading();
+                if( Math.abs(turn) > 0.05 ) {
+                    // Turn is requested
+                    lastHeading = getHeading();
+                    autoturning = false;
+                }
+                else {
+                    if( Math.abs(drive) > 0.02 || Math.abs(strafe) > 0.02 || autoturning ) {
+                        // No turn desired, hold last heading
+                        turn = getSteeringCorrection(lastHeading, P_TURN_GAIN);
+                        telemetry.addData("Heading Correcting Turn", "%5.2f", turn);
 
-                turn = getSteeringCorrection(lastHeading, P_TURN_GAIN);
+                        // Clip the speed to the maximum permitted value.
+                        turn = Range.clip(turn, -MAX_AUTO_TURN, MAX_AUTO_TURN);
+                        telemetry.addData("Heading Correcting Turn Clipped", "%5.2f", turn);
 
-                // Clip the speed to the maximum permitted value.
-                turn = Range.clip(TURN_SPEED, -MAX_AUTO_TURN, MAX_AUTO_TURN);
+                        // Test if autoTurn has reached the goal (small turn correction)
+                        if( autoturning && Math.abs(turn) < 0.02 )
+                            autoturning = false;
+                    }
+                    else {
+                        telemetry.addData("Not moving, no turn correction", "%5.2f %5.2f", drive, strafe);
+                    }
+                }
+                telemetry.addData("Last Heading","%5.2f", lastHeading);
+                telemetry.addData("Current Heading","%5.2f", currentHeading);
             }
-            telemetry.addData("Heading","%5.2f", lastHeading);
-            telemetry.addData("Heading","%5.2f", currentHeading);
 
             // Apply desired axes motions to the drivetrain.
             moveRobot(drive, strafe, turn);
 
-            double armPower = gamepad2.right_trigger - gamepad2.left_trigger;
-            arm.setPower(armPower);
+            int armPos = arm.getCurrentPosition();
+            telemetry.addData("Arm Position","%5d", armPos);
 
+            double armPower = (gamepad2.right_trigger - gamepad2.left_trigger);
+            arm.setPower(armPower);
             telemetry.addData("Arm","%3.0f", armPower);
             telemetry.update();
 
