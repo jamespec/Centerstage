@@ -30,8 +30,6 @@ public class PixelVisionTestAuto extends OpMode {
 
    @Override
    public void loop() {
-      telemetry.addData("Identified", visionProcessor.getSelection());
-      telemetry.addData("Middle Saturation: %5.2f", visionProcessor.getSatRectMiddle());
-      telemetry.addData(" Right Saturation: %5.2f", visionProcessor.getSatRectRight());
+
    }
 }
