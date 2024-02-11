@@ -42,8 +42,8 @@ import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
 import org.firstinspires.ftc.vision.VisionPortal;
 
-@Autonomous(name="Blue Other")
-public class BlueOther extends LinearOpMode {
+@Autonomous(name="Red Backstage")
+public class RedBackstage extends LinearOpMode {
 
     private PixelVisionProcessor visionProcessor;
     private VisionPortal visionPortal;
@@ -118,104 +118,60 @@ public class BlueOther extends LinearOpMode {
         // Autonomous Commands Here
 
 
-	if (location == PixelVisionProcessor.Location.LEFT) {
-		moveRobot(0.375, 0.0, heading, 1.3);
-        moveRobot(0.0, 0.0, heading, 0.75);// speed, how fast strafe, heading, time
-        moveRobot(0.0, 0.1, heading + 90, 2.0);
-        moveRobot(0.0, 0.0, heading + 90, 0.75);
-        moveRobot(0.33,0.0, heading + 90, 1.3);
-        moveRobot(0.0, 0.0, heading + 90, 0.75);
+	if (location == PixelVisionProcessor.Location.RIGHT) {
+		moveRobot(0.35, 0.0, heading, 1.3);
+        moveRobot(0.0, 0.0, heading, 1.0);// speed, how fast strafe, heading, time
+        moveRobot(0.0, 0.1, heading - 90, 2.0);
+        moveRobot(0.0, 0.0, heading - 90, 1.0);
+        moveRobot(0.25, 0.0, heading - 90, 1.33);
+        moveRobot(0.0, 0.0, heading - 90, 1.0);
         setArmPosition(500);
-        moveRobot(0.0, 0.0, heading + 90, 0.75);
-        moveRobot(0.35,0.0, heading + 90, 3.25);
-        moveRobot(0.0, 0.0, heading + 90, 0.75);
-        moveRobot(0.0, 0.4, heading + 90, 0.3);
-        moveRobot(0.0, 0.0, heading + 90, 0.75);
-		setArmPosition(6200);
-		moveRobot(0.0, 0.0, heading + 90, 0.75);
-        moveRobot(0.2, 0.0, heading + 90, 1.25);
-        moveRobot(0.0, 0.0, heading + 90, 0.75);
+        moveRobot(0.0, 0.0, heading - 90, 1.0);
+        moveRobot(0.0, 0.3, heading - 90, 0.4);
+        moveRobot(0.0, 0.0, heading - 90, 1.0);
+		setArmPosition(5500);
+		moveRobot(0.0, 0.0, heading - 90, 1.0);
 		drop();
-        moveRobot(0.0, 0.0, heading + 90, 0.75);
-        moveRobot(-0.2, 0.0, heading + 90, 0.25);
-        moveRobot(0.0, 0.0, heading + 90, 0.75);
-        setArmPosition(4000);
-        moveRobot(0.0, 0.0, heading + 90, 0.75);
-        moveRobot(0.0, -0.4, heading + 90, 0.25);
-        moveRobot(0.0, 0.0, heading + 90, 0.75);
-        moveRobot(0.3, 0.0, heading + 90, 0.75);
-        moveRobot(0.0, 0.0, heading + 90, 0.75);
 	}
 	
-	if (location == PixelVisionProcessor.Location.RIGHT) {
-		moveRobot(0.375, 0.0, heading, 1.3);
-		moveRobot(0.0, 0.0, heading, 0.75);
-		moveRobot(0.0, 0.1, heading + 90, 2.0);
-       	moveRobot(0.0, 0.0, heading + 90, 0.75);
-		moveRobot(-0.25, 0.0, heading + 90, 0.3);
-       	moveRobot(0.0, 0.0, heading + 90, 0.75);
+	if (location == PixelVisionProcessor.Location.LEFT) {
+		moveRobot(0.35, 0.0, heading, 1.3);
+		moveRobot(0.0, 0.0, heading, 1.0);
+		moveRobot(0.0, 0.1, heading - 90, 2.0);
+        moveRobot(0.0, 0.0, heading - 90, 1.0);
+		moveRobot(-0.25, 0.0, heading - 90, 0.4);
+        moveRobot(0.0, 0.0, heading - 90, 1.0);
 		setArmPosition(500);
-       	moveRobot(0.0, 0.0, heading + 90, 0.75);
-		moveRobot(0.375, 0.0, heading + 90, 3.5);
-       	moveRobot(0.0, 0.0, heading + 90, 0.75);
-        moveRobot(0.0, -0.4, heading + 90, 0.33);
-        moveRobot(0.0, 0.0, heading + 90, 0.75);
-		setArmPosition(6200);
-		moveRobot(0.0, 0.0, heading + 90, 0.75);
-        moveRobot(0.2, 0.0, heading + 90, 2.33);
+        moveRobot(0.0, 0.0, heading - 90, 1.0);
+		moveRobot(0.3, 0.0, heading - 90, 0.6);
+        moveRobot(0.0, 0.0, heading - 90, 1.0);
+		moveRobot(0.0, -0.3, heading - 90, 0.4);
+        moveRobot(0.0, 0.0, heading - 90, 1.0);
+		setArmPosition(5500);
+		moveRobot(0.0, 0.0, heading - 90, 1.0);
 		drop();
-        moveRobot(0.0, 0.0, heading + 90, 0.75);
-        moveRobot(-0.2, 0.0, heading + 90, 0.25);
-        moveRobot(0.0, 0.0, heading + 90, 0.75);
-        setArmPosition(4000);
-        moveRobot(0.0, 0.0, heading + 90, 0.75);
-        moveRobot(0.0, -0.4, heading + 90, 0.25);
-        moveRobot(0.0, 0.0, heading + 90, 0.75);
-        moveRobot(0.3, 0.0, heading + 90, 0.75);
-        moveRobot(0.0, 0.0, heading + 90, 0.75);
-
 
 	}
 
 	if (location == PixelVisionProcessor.Location.MIDDLE) {
-
-		moveRobot(0.3725, 0.0, heading, 2.1);
-		moveRobot(0.0, 0.0, heading, 0.75);
+		moveRobot(0.35, 0.0, heading, 1.8);
+		moveRobot(0.0, 0.0, heading, 1.0);
 		setArmPosition(500);
-		moveRobot(0.0, 0.0, heading, 0.75);
-		moveRobot(0.25, 0.0, heading, 1.15);
-        moveRobot(0.0, 0.0, heading, 0.75);
-		moveRobot(0.0, 0.1, heading + 90, 2.0);
-        moveRobot(0.0, 0.0, heading + 90, 0.75);
-		moveRobot(0.375, 0.0, heading + 90, 3.25);
-        moveRobot(0.0, 0.0, heading + 90, 0.75);
-        moveRobot(0.0, 0.425, heading + 90, 1.55);
-        moveRobot(0.0, 0.0, heading + 90, 0.75);
-		setArmPosition(6200);
-        moveRobot(0.0, 0.0, heading + 90, 0.75);
-        moveRobot(0.35, 0.0, heading + 90, 1.0);
-		moveRobot(0.0, 0.0, heading + 90, 0.75);
-        moveRobot(0.25, 0.0, heading + 90, 1.25);
-        moveRobot(0.0, 0.0, heading + 90, 0.75);
-        intake.setPosition(0.0);
-        moveRobot(0.0, 0.0, heading + 90, 0.75);
-        moveRobot(-0.2, 0.0, heading + 90, 0.25);
-        moveRobot(0.0, 0.0, heading + 90, 0.75);
-        setArmPosition(4000);
-        moveRobot(0.0, 0.0, heading + 90, 0.75);
-        moveRobot(0.0, -0.4, heading + 90, 0.25);
-        moveRobot(0.0, 0.0, heading + 90, 0.75);
-        moveRobot(0.3, 0.0, heading + 90, 0.75);
-        moveRobot(0.0, 0.0, heading + 90, 0.75);
+		moveRobot(0.0, 0.0, heading, 1.0);
+		moveRobot(-0.25, 0.0, heading, 0.8);
+        moveRobot(0.0, 0.0, heading, 1.0);
+		moveRobot(0.0, 0.1, heading - 90, 2.0);
+        moveRobot(0.0, 0.0, heading - 90, 1.0);
+		moveRobot(0.3, 0.0, heading - 90, 0.4);
+        moveRobot(0.0, 0.0, heading - 90, 1.0);
+		setArmPosition(5500);
+		moveRobot(0.0, 0.0, heading - 90, 1.0);
+		drop();
 
 	}
 
-        
-
         telemetry.update();
-
         //sleep(10);
-
     }
 
     public void moveRobot(double drive, double stafe, double heading, double timeSeconds) {

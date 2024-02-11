@@ -34,7 +34,7 @@ public class PixelVisionProcessor implements VisionProcessor {
     @Override
     public Object processFrame(Mat frame, long captureTimeNanos) {
 //        Imgproc.cvtColor(frame, hsvMat, Imgproc.COLOR_RGB2HSV);
-        inRange(frame, new Scalar(0.0,0.0,0.0,0.0), new Scalar(255.0,30.0,255.0,255.0), frame);
+        inRange(frame, new Scalar(20.0,20.0,20.0,0.0), new Scalar(255.0,70.0,200.0,255.0), frame);
 
         Mat m = new Mat(frame, rectMiddle);
         int middleCount = Core.countNonZero(m);
