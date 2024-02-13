@@ -30,13 +30,13 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
-import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
-import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.Range;
 
+import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.ExposureControl;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.GainControl;
@@ -49,9 +49,8 @@ import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-@Autonomous(name="Blue Other")
-public class BlueOther extends LinearOpMode {
-
+public class OmniChassisWithVision
+{
     private PixelVisionProcessor visionProcessor;
     private VisionPortal visionPortal;
     static final double P_TURN_GAIN = 0.02;     // Larger is more responsive, but also less stable
@@ -74,10 +73,14 @@ public class BlueOther extends LinearOpMode {
     final double MAX_AUTO_STRAFE = 0.3;   //  Clip the approach speed to this max value (adjust for your robot)
     final double MAX_AUTO_TURN = 0.3;   //  Clip the turn speed to this max value (adjust for your robot) NOTE!!!! Was 0.3
 
+    HardwareMap hardwareMap;
+    Telemetry telemetry;
 
-    @Override
-    public void runOpMode() throws InterruptedException
+    OmniChassisWithVision(HardwareMap hardwareMap, Telemetry telemetry)
     {
+        this.hardwareMap = hardwareMap;
+        this.telemetry = telemetry;
+
         visionProcessor = new PixelVisionProcessor();
 
         WebcamName web = hardwareMap.get(WebcamName.class, "Webcam 1");
@@ -97,14 +100,11 @@ public class BlueOther extends LinearOpMode {
 
         visionPortal = new VisionPortal.Builder()
                 .setCamera(hardwareMap.get(WebcamName.class, "Webcam 1"))
-                .addProcessor(visionProcessor)
+//                .addProcessor(visionProcessor)
                 .addProcessor(aprilTag)
                 .build();
 
-        boolean targetFound = false;    // Set to true when an AprilTag target is detected
-        double drive = 0;        // Desired forward power/speed (-1 to +1)
-        double strafe = 0;        // Desired strafe power/speed (-1 to +1)
-        double turn = 0;        // Desired turning power/speed (-1 to +1)
+        setManualExposure(6, 250);  // Use low exposure time to reduce motion blur
 
         // Initialize the hardware variables. Note that the strings used here as parameters
         // to 'get' must match the names assigned during the robot configuration.
@@ -139,127 +139,18 @@ public class BlueOther extends LinearOpMode {
 
         telemetry.addData("Waiting for start", "");
         telemetry.update();
-        waitForStart();
-        visionPortal.stopStreaming();
-
-        PixelVisionProcessor.Location location = visionProcessor.getLocation();
-	
-	
-
-        double heading = getHeading();
-
-        // Autonomous Commands Here
-
-
-	if (location == PixelVisionProcessor.Location.LEFT) {
-		moveRobot(0.375, 0.0, heading, 1.3);
-        moveRobot(0.0, 0.0, heading, 0.75);// speed, how fast strafe, heading, time
-        moveRobot(0.0, 0.1, heading + 90, 2.0);
-        moveRobot(0.0, 0.0, heading + 90, 0.75);
-        moveRobot(0.33,0.0, heading + 90, 1.3);
-        moveRobot(0.0, 0.0, heading + 90, 0.75);
-        setArmPosition(500);
-        moveRobot(0.0, 0.0, heading + 90, 0.75);
-        moveRobot(0.35,0.0, heading + 90, 3.25);
-        moveRobot(0.0, 0.0, heading + 90, 0.75);
-        moveRobot(0.0, 0.4, heading + 90, 0.3);
-        moveRobot(0.0, 0.0, heading + 90, 0.75);
-		setArmPosition(6200);
-		moveRobot(0.0, 0.0, heading + 90, 0.75);
-        moveRobot(0.2, 0.0, heading + 90, 1.25);
-        moveRobot(0.0, 0.0, heading + 90, 0.75);
-		drop();
-        moveRobot(0.0, 0.0, heading + 90, 0.75);
-        moveRobot(-0.2, 0.0, heading + 90, 0.25);
-        moveRobot(0.0, 0.0, heading + 90, 0.75);
-        setArmPosition(4000);
-        moveRobot(0.0, 0.0, heading + 90, 0.75);
-        moveRobot(0.0, -0.4, heading + 90, 0.25);
-        moveRobot(0.0, 0.0, heading + 90, 0.75);
-        moveRobot(0.3, 0.0, heading + 90, 0.75);
-        moveRobot(0.0, 0.0, heading + 90, 0.75);
-	}
-	
-	if (location == PixelVisionProcessor.Location.RIGHT) {
-		moveRobot(0.375, 0.0, heading, 1.3);
-		moveRobot(0.0, 0.0, heading, 0.75);
-		moveRobot(0.0, 0.1, heading + 90, 2.0);
-       	moveRobot(0.0, 0.0, heading + 90, 0.75);
-		moveRobot(-0.25, 0.0, heading + 90, 0.3);
-       	moveRobot(0.0, 0.0, heading + 90, 0.75);
-		setArmPosition(500);
-       	moveRobot(0.0, 0.0, heading + 90, 0.75);
-		moveRobot(0.375, 0.0, heading + 90, 3.5);
-       	moveRobot(0.0, 0.0, heading + 90, 0.75);
-        moveRobot(0.0, -0.4, heading + 90, 0.33);
-        moveRobot(0.0, 0.0, heading + 90, 0.75);
-		setArmPosition(6200);
-		moveRobot(0.0, 0.0, heading + 90, 0.75);
-        moveRobot(0.2, 0.0, heading + 90, 2.33);
-		drop();
-        moveRobot(0.0, 0.0, heading + 90, 0.75);
-        moveRobot(-0.2, 0.0, heading + 90, 0.25);
-        moveRobot(0.0, 0.0, heading + 90, 0.75);
-        setArmPosition(4000);
-        moveRobot(0.0, 0.0, heading + 90, 0.75);
-        moveRobot(0.0, -0.4, heading + 90, 0.25);
-        moveRobot(0.0, 0.0, heading + 90, 0.75);
-        moveRobot(0.3, 0.0, heading + 90, 0.75);
-        moveRobot(0.0, 0.0, heading + 90, 0.75);
-
-
-	}
-
-	if (location == PixelVisionProcessor.Location.MIDDLE) {
-
-		moveRobot(0.3725, 0.0, heading, 2.1);
-		moveRobot(0.0, 0.0, heading, 0.75);
-		setArmPosition(500);
-		moveRobot(0.0, 0.0, heading, 0.75);
-		moveRobot(0.25, 0.0, heading, 1.15);
-        moveRobot(0.0, 0.0, heading, 0.75);
-		moveRobot(0.0, 0.1, heading + 90, 2.0);
-        moveRobot(0.0, 0.0, heading + 90, 0.75);
-		moveRobot(0.375, 0.0, heading + 90, 3.25);
-        moveRobot(0.0, 0.0, heading + 90, 0.75);
-        moveRobot(0.0, 0.425, heading + 90, 1.55);
-        moveRobot(0.0, 0.0, heading + 90, 0.75);
-		setArmPosition(6200);
-        moveRobot(0.0, 0.0, heading + 90, 0.75);
-        moveRobot(0.35, 0.0, heading + 90, 1.0);
-		moveRobot(0.0, 0.0, heading + 90, 0.75);
-        moveRobot(0.25, 0.0, heading + 90, 1.25);
-        moveRobot(0.0, 0.0, heading + 90, 0.75);
-        intake.setPosition(0.0);
-        moveRobot(0.0, 0.0, heading + 90, 0.75);
-        moveRobot(-0.2, 0.0, heading + 90, 0.25);
-        moveRobot(0.0, 0.0, heading + 90, 0.75);
-        setArmPosition(4000);
-        moveRobot(0.0, 0.0, heading + 90, 0.75);
-        moveRobot(0.0, -0.4, heading + 90, 0.25);
-        moveRobot(0.0, 0.0, heading + 90, 0.75);
-        moveRobot(0.3, 0.0, heading + 90, 0.75);
-        moveRobot(0.0, 0.0, heading + 90, 0.75);
-
     }
 
-
-        telemetry.update();
-
-        //sleep(10);
-
-    }
-
-
-    public void moveToApril(int targetApril, int desiredDistance)
+    public void moveToApril(int targetApril, int desiredDistance, int sideOffset)
     {
-        double drive = 0;        // Desired forward power/speed (-1 to +1)
-        double strafe = 0;        // Desired strafe power/speed (-1 to +1)
-        double turn = 0;        // Desired turning power/speed (-1 to +1)
+
+        double drive = 0.1;      // Desired forward power/speed (-1 to +1)
+        double strafe = 0.1;     // Desired strafe power/speed (-1 to +1)
+        double turn = 0.1;       // Desired turning power/speed (-1 to +1)
         boolean targetFound = false;
         AprilTagDetection desiredTag = null;
 
-        while (Math.abs(drive) > 0.08 || Math.abs(strafe) > 0.08 || Math.abs(turn) > 0.08) {
+        while (Math.abs(drive) > 0.045 || Math.abs(strafe) > 0.045 || Math.abs(turn) > 0.045) {
             // Step through the list of detected tags and look for a matching tag
             List<AprilTagDetection> currentDetections = aprilTag.getDetections();
             for (AprilTagDetection detection : currentDetections) {
@@ -290,13 +181,15 @@ public class BlueOther extends LinearOpMode {
                 telemetry.addData("Yaw", "%3.0f degrees", desiredTag.ftcPose.yaw);
             } else {
                 telemetry.addLine("Target not found, giving up!\n");
+                telemetry.update();
+                sleep(5000);
                 return;
             }
 
             // If Left Bumper is being pressed, AND we have found the desired target, Drive to target Automatically .
             // Determine heading, range and Yaw (tag image rotation) error so we can use them to control the robot automatically.
             double rangeError = (desiredTag.ftcPose.range - desiredDistance);
-            double headingError = -desiredTag.ftcPose.bearing;
+            double headingError = -desiredTag.ftcPose.bearing - sideOffset;
             double yawError = desiredTag.ftcPose.yaw;
 
             if (Math.abs(rangeError) > 0.2) {
@@ -312,6 +205,7 @@ public class BlueOther extends LinearOpMode {
             strafe = Range.clip(-yawError * STRAFE_GAIN, -MAX_AUTO_STRAFE, MAX_AUTO_STRAFE);
 
             telemetry.addData("Auto", "Drive %5.2f, Strafe %5.2f, Turn %5.2f ", drive, strafe, turn);
+            telemetry.update();
 
             // Apply desired axes motions to the drivetrain.
             moveRobot(drive, strafe, turn);
@@ -410,17 +304,19 @@ public class BlueOther extends LinearOpMode {
         intake.setPosition(0);
     }
 
-    public void setArmPosition(int position) {
+    public void setArmPosition(int position, double power) {
         arm.setTargetPosition(position);
         arm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        arm.setPower(1.0);
+        arm.setPower(power);
         while (arm.isBusy()) {
             sleep(10);
         }
     }
 
-    private void setManualExposure(int exposureMS, int gain) {
+    private void setManualExposure(int exposureMS, int gain)
+    {
         // Wait for the camera to be open, then use the controls
+        boolean tooLong = false;
 
         if (visionPortal == null) {
             return;
@@ -430,15 +326,24 @@ public class BlueOther extends LinearOpMode {
         if (visionPortal.getCameraState() != VisionPortal.CameraState.STREAMING) {
             telemetry.addData("Camera", "Waiting");
             telemetry.update();
-            while (!isStopRequested() && (visionPortal.getCameraState() != VisionPortal.CameraState.STREAMING)) {
+
+            long start = System.currentTimeMillis();
+            while ( !tooLong && visionPortal.getCameraState() != VisionPortal.CameraState.STREAMING ) {
                 sleep(20);
+                if( System.currentTimeMillis() > start + 20000 ) {
+                    tooLong = true;
+                }
             }
-            telemetry.addData("Camera", "Ready");
+            if( tooLong )
+                telemetry.addData("Camera", "Took too long");
+            else
+                telemetry.addData("Camera", "Ready");
+
             telemetry.update();
         }
 
         // Set camera controls unless we are stopping.
-        if (!isStopRequested())
+        if (!tooLong)
         {
             ExposureControl exposureControl = visionPortal.getCameraControl(ExposureControl.class);
             if (exposureControl.getMode() != ExposureControl.Mode.Manual) {
@@ -451,5 +356,11 @@ public class BlueOther extends LinearOpMode {
             gainControl.setGain(gain);
             sleep(20);
         }
+    }
+
+    private void sleep( int milli ) {
+        try {
+            Thread.sleep(milli);
+        } catch( Exception e ) {}
     }
 }

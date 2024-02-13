@@ -280,6 +280,7 @@ public class AutoAprilTagAlign extends LinearOpMode
             sleep(10);
         }
     }
+
     public void moveRobot(double x, double y, double yaw) {
         // Calculate wheel powers.
         double leftFrontPower    =  x -y -yaw;
