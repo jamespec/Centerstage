@@ -241,7 +241,7 @@ public class OmniDriverWithAprilTagRecognition extends LinearOpMode
 
                 telemetry.addData("Auto","Drive %5.2f, Strafe %5.2f, Turn %5.2f ", drive, strafe, turn);
             }
-            else if( gamepad1.y && false ) {
+            else if( gamepad1.y ) {
                 arm.setTargetPosition(5500);
                 arm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                 arm.setPower(1.0);
@@ -252,7 +252,7 @@ public class OmniDriverWithAprilTagRecognition extends LinearOpMode
                 lastHeading = lastHeading + 180;
                 autoturning = true;
             }
-            else if( gamepad1.x && false ) {
+            else if( gamepad1.x ) {
                 arm.setTargetPosition(7000);
                 arm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                 arm.setPower(1.0);
