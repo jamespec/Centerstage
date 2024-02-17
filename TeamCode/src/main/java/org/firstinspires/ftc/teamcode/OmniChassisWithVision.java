@@ -51,40 +51,38 @@ import java.util.concurrent.TimeUnit;
 
 public class OmniChassisWithVision
 {
-    private PixelVisionProcessor visionProcessor;
-    private VisionPortal visionPortal;
-    static final double P_TURN_GAIN = 0.02;     // Larger is more responsive, but also less stable
+    HardwareMap hardwareMap;
+    Telemetry telemetry;
 
+    private final MarkerVisionProcessor visionProcessor;
+    private final VisionPortal visionPortal;
+    private final AprilTagProcessor aprilTag;
+
+    private final double P_TURN_GAIN = 0.04;      // Larger is more responsive, but also less stable
+    private final double SPEED_GAIN  = 0.04;      // Forward Speed Control "Gain".
+    private final double STRAFE_GAIN = 0.015;     // Strafe Speed Control "Gain".
+    private final double TURN_GAIN   = 0.02;        // Turn Control "Gain".
+    private final double SPEED_I         = 0.02;
+    private final double MAX_AUTO_SPEED  = 0.3;   //  Clip the approach speed to this max value (adjust for your robot)
+    private final double MAX_AUTO_STRAFE = 0.3;   //  Clip the approach speed to this max value (adjust for your robot)
+    private final double MAX_AUTO_TURN   = 0.3;   //  Clip the turn speed to this max value (adjust for your robot) NOTE!!!! Was 0.3
+
+    private int ticksPerRevolution = 2000;
+
+    private IMU     imu = null;      // Control/Expansion Hub IMU
     private DcMotor leftFrontDrive = null;  //  Used to control the left front drive wheel
     private DcMotor rightFrontDrive = null;  //  Used to control the right front drive wheel
     private DcMotor leftBackDrive = null;  //  Used to control the left back drive wheel
     private DcMotor rightBackDrive = null;
     private DcMotor arm = null;
-    private Servo intake = null;//  Used to control the right back drive wheel
-    private IMU imu = null;      // Control/Expansion Hub IMU
-
-    private AprilTagProcessor aprilTag;
-
-    final double SPEED_GAIN = 0.03;   //  Forward Speed Control "Gain". eg: Ramp up to 50% power at a 25 inch error.   (0.50 / 25.0)
-    final double STRAFE_GAIN = 0.015;   //  Strafe Speed Control "Gain".  eg: Ramp up to 25% power at a 25 degree Yaw error.   (0.25 / 25.0)
-    final double TURN_GAIN = 0.02;   //  Turn Control "Gain".  eg: Ramp up to 25% power at a 25 degree error. (0.25 / 25.0)
-
-    final double MAX_AUTO_SPEED = 0.3;   //  Clip the approach speed to this max value (adjust for your robot)
-    final double MAX_AUTO_STRAFE = 0.3;   //  Clip the approach speed to this max value (adjust for your robot)
-    final double MAX_AUTO_TURN = 0.3;   //  Clip the turn speed to this max value (adjust for your robot) NOTE!!!! Was 0.3
-
-    HardwareMap hardwareMap;
-    Telemetry telemetry;
+    private Servo   intake = null;
 
     OmniChassisWithVision(HardwareMap hardwareMap, Telemetry telemetry)
     {
         this.hardwareMap = hardwareMap;
         this.telemetry = telemetry;
 
-        visionProcessor = new PixelVisionProcessor();
-
-        WebcamName web = hardwareMap.get(WebcamName.class, "Webcam 1");
-//        visionPortal = VisionPortal.easyCreateWithDefaults(web, visionProcessor);
+        visionProcessor = new MarkerVisionProcessor();
 
         // Create the AprilTag processor by using a builder.
         aprilTag = new AprilTagProcessor.Builder().build();
@@ -98,9 +96,13 @@ public class OmniChassisWithVision
         // Note: Decimation can be changed on-the-fly to adapt during a match.
         aprilTag.setDecimation(2);
 
+
+        WebcamName web = hardwareMap.get(WebcamName.class, "Webcam 1");
+//        visionPortal = VisionPortal.easyCreateWithDefaults(web, visionProcessor);
+
         visionPortal = new VisionPortal.Builder()
                 .setCamera(hardwareMap.get(WebcamName.class, "Webcam 1"))
-//                .addProcessor(visionProcessor)
+                //.addProcessor(visionProcessor)
                 .addProcessor(aprilTag)
                 .build();
 
@@ -132,8 +134,15 @@ public class OmniChassisWithVision
         leftBackDrive.setDirection(DcMotor.Direction.REVERSE);
         rightFrontDrive.setDirection(DcMotor.Direction.FORWARD);
         rightBackDrive.setDirection(DcMotor.Direction.FORWARD);
-        arm.setDirection(DcMotor.Direction.FORWARD);
 
+        rightFrontDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        rightFrontDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+
+        leftFrontDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        leftBackDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        rightBackDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+
+        arm.setDirection(DcMotor.Direction.FORWARD);
         arm.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         arm.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
@@ -143,7 +152,6 @@ public class OmniChassisWithVision
 
     public void moveToApril(int targetApril, int desiredDistance, int sideOffset)
     {
-
         double drive = 0.1;      // Desired forward power/speed (-1 to +1)
         double strafe = 0.1;     // Desired strafe power/speed (-1 to +1)
         double turn = 0.1;       // Desired turning power/speed (-1 to +1)
@@ -213,7 +221,8 @@ public class OmniChassisWithVision
         }
     }
 
-    public void moveRobot(double drive, double stafe, double heading, double timeSeconds) {
+    public void moveRobot(double drive, double stafe, double heading, double timeSeconds)
+    {
         long start = System.currentTimeMillis();
         long now = start;
 
@@ -222,28 +231,7 @@ public class OmniChassisWithVision
             turn = Range.clip(turn, -MAX_AUTO_TURN, MAX_AUTO_TURN);
             telemetry.addData("Heading Correcting Turn Clipped", "%5.2f", turn);
 
-            double leftFrontPower = drive - stafe - turn;
-            double rightFrontPower = drive + stafe + turn;
-            double leftBackPower = drive + stafe - turn;
-            double rightBackPower = drive - stafe + turn;
-
-            // Normalize wheel powers to be less than 1.0
-            double max = Math.max(Math.abs(leftFrontPower), Math.abs(rightFrontPower));
-            max = Math.max(max, Math.abs(leftBackPower));
-            max = Math.max(max, Math.abs(rightBackPower));
-
-            if (max > 1.0) {
-                leftFrontPower /= max;
-                rightFrontPower /= max;
-                leftBackPower /= max;
-                rightBackPower /= max;
-            }
-
-            // Send powers to the wheels.
-            leftFrontDrive.setPower(leftFrontPower);
-            rightFrontDrive.setPower(rightFrontPower);
-            leftBackDrive.setPower(leftBackPower);
-            rightBackDrive.setPower(rightBackPower);
+            moveRobot( drive, stafe, turn );
 
             now = System.currentTimeMillis();
             sleep(10);
@@ -251,12 +239,53 @@ public class OmniChassisWithVision
         }
     }
 
-    public void moveRobot(double x, double y, double yaw) {
+    public void moveRobotDistance(double maxDrive, double stafe, double heading, double distinches)
+    {
+        int distTicks = (int)((distinches * 25.4)/ (Math.PI * 48.0) * 2000.0);
+        rightFrontDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+
+        double sumError = 0.0;
+        int currentPos = -rightFrontDrive.getCurrentPosition();
+        double preError = 0;
+        double error = (distTicks - currentPos)/339.0;//converted to inches
+
+        while ( Math.abs(error) > 0.25 || Math.abs(preError - error) > 0.01) {
+            if (Math.abs(error - preError) < 0.05)
+                sumError += error;
+            else
+                sumError = 0;
+
+            double drive = error * SPEED_GAIN + sumError * SPEED_I;
+            drive = Range.clip(drive, -maxDrive, maxDrive );
+            double turn = getSteeringCorrection(heading, P_TURN_GAIN);
+            turn = Range.clip(turn, -MAX_AUTO_TURN, MAX_AUTO_TURN);
+
+            telemetry.addData("Heading Correcting Turn Clipped", "%5.2f", turn);
+            telemetry.addData("Distance Ticks:", "%d", distTicks);
+            telemetry.addData("Current Pos", "%d", currentPos );
+            telemetry.addData("Drive Power", "%5.2f", drive );
+            telemetry.addData("error", "%5.2f", error );
+            telemetry.addData("preError", "%5.2f", preError );
+            telemetry.addData("sumError", "%5.2f", sumError );
+            telemetry.update();
+
+            moveRobot( drive, stafe, turn );
+
+            sleep(10);
+            currentPos = -rightFrontDrive.getCurrentPosition();
+            preError = error;
+            error = (distTicks - currentPos)/339.0;//inches
+        }
+        moveRobot( 0.0, 0.0, 0.0 );
+    }
+
+    public void moveRobot(double drive, double strafe, double turn)
+    {
         // Calculate wheel powers.
-        double leftFrontPower = x - y - yaw;
-        double rightFrontPower = x + y + yaw;
-        double leftBackPower = x + y - yaw;
-        double rightBackPower = x - y + yaw;
+        double leftFrontPower = drive - strafe - turn;
+        double rightFrontPower = drive + strafe + turn;
+        double leftBackPower = drive + strafe - turn;
+        double rightBackPower = drive - strafe + turn;
 
         // Normalize wheel powers to be less than 1.0
         double max = Math.max(Math.abs(leftFrontPower), Math.abs(rightFrontPower));
@@ -277,7 +306,8 @@ public class OmniChassisWithVision
         rightBackDrive.setPower(rightBackPower);
     }
 
-    public double getSteeringCorrection(double desiredHeading, double proportionalGain) {
+    public double getSteeringCorrection(double desiredHeading, double proportionalGain)
+    {
         double targetHeading = desiredHeading;  // Save for telemetry
 
         // Determine the heading current error
@@ -291,20 +321,24 @@ public class OmniChassisWithVision
         return Range.clip(headingError * -proportionalGain, -1, 1);
     }
 
-    public double getHeading() {
+    public double getHeading()
+    {
         YawPitchRollAngles orientation = imu.getRobotYawPitchRollAngles();
         return orientation.getYaw(AngleUnit.DEGREES);
     }
 
-    public void grab() {
+    public void grab()
+    {
         intake.setPosition(0.35);
     }
 
-    public void drop() {
+    public void drop()
+    {
         intake.setPosition(0);
     }
 
-    public void setArmPosition(int position, double power) {
+    public void setArmPosition(int position, double power)
+    {
         arm.setTargetPosition(position);
         arm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         arm.setPower(power);

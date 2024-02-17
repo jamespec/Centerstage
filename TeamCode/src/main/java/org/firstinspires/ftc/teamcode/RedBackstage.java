@@ -45,7 +45,7 @@ import org.firstinspires.ftc.vision.VisionPortal;
 @Autonomous(name="Red Backstage")
 public class RedBackstage extends LinearOpMode {
 
-    private PixelVisionProcessor visionProcessor;
+    private MarkerVisionProcessor visionProcessor;
     private VisionPortal visionPortal;
     static final double P_TURN_GAIN = 0.02;     // Larger is more responsive, but also less stable
 
@@ -63,7 +63,7 @@ public class RedBackstage extends LinearOpMode {
     @Override
     public void runOpMode() throws InterruptedException {
 
-        visionProcessor = new PixelVisionProcessor();
+        visionProcessor = new MarkerVisionProcessor();
 
         WebcamName web = hardwareMap.get(WebcamName.class, "Webcam 1");
         visionPortal = VisionPortal.easyCreateWithDefaults(web, visionProcessor);
@@ -109,7 +109,7 @@ public class RedBackstage extends LinearOpMode {
         waitForStart();
         visionPortal.stopStreaming();
 
-        PixelVisionProcessor.Location location = visionProcessor.getLocation();
+        MarkerVisionProcessor.Location location = visionProcessor.getLocation();
 	
 	
 
@@ -118,7 +118,7 @@ public class RedBackstage extends LinearOpMode {
         // Autonomous Commands Here
 
 
-	if (location == PixelVisionProcessor.Location.RIGHT) {
+	if (location == MarkerVisionProcessor.Location.RIGHT) {
 		moveRobot(0.35, 0.0, heading, 1.3);
         moveRobot(0.0, 0.0, heading, 1.0);// speed, how fast strafe, heading, time
         moveRobot(0.0, 0.1, heading - 90, 2.0);
@@ -134,7 +134,7 @@ public class RedBackstage extends LinearOpMode {
 		drop();
 	}
 	
-	if (location == PixelVisionProcessor.Location.LEFT) {
+	if (location == MarkerVisionProcessor.Location.LEFT) {
 		moveRobot(0.35, 0.0, heading, 1.3);
 		moveRobot(0.0, 0.0, heading, 1.0);
 		moveRobot(0.0, 0.1, heading - 90, 2.0);
@@ -153,7 +153,7 @@ public class RedBackstage extends LinearOpMode {
 
 	}
 
-	if (location == PixelVisionProcessor.Location.MIDDLE) {
+	if (location == MarkerVisionProcessor.Location.MIDDLE) {
 		moveRobot(0.35, 0.0, heading, 1.8);
 		moveRobot(0.0, 0.0, heading, 1.0);
 		setArmPosition(500);

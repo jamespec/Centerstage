@@ -14,7 +14,7 @@ import org.opencv.core.Scalar;
 import org.opencv.imgproc.Imgproc;
 
 
-public class PixelVisionProcessor implements VisionProcessor {
+public class MarkerVisionProcessor implements VisionProcessor {
 
     private Location location = Location.NONE;
     public Rect rectMiddle = new Rect(100, 120, 250, 180);

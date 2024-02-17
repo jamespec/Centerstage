@@ -42,9 +42,11 @@ public class SimpleAutoTest extends LinearOpMode
 
         waitForStart();
 
-        chassis.moveToApril(3, 12, 0);
-        chassis.setArmPosition(6200, 1.0);
-        chassis.drop();
-        chassis.setArmPosition(4750, 0.2);
+        chassis.moveRobotDistance(0.75, 0.0, heading, 48);
+        sleep(5000);
+        //chassis.moveToApril(3, 12, 0);
+        //chassis.setArmPosition(6200, 1.0);
+        //chassis.drop();
+        //chassis.setArmPosition(4750, 0.2);
     }
 }
