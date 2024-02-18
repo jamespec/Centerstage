@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode;
+package org.firstinspires.ftc.teamcode.vision;
 
 import static org.opencv.core.Core.inRange;
 
@@ -23,7 +23,7 @@ public class MarkerVisionProcessor implements VisionProcessor {
     Mat hsvMat = new Mat();
     Mat hsvFilteredMat = new Mat();
 
-    Location getLocation() {
+    public Location getLocation() {
         return location;
     }
 

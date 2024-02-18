@@ -38,11 +38,10 @@ public class SimpleAutoTest extends LinearOpMode
     @Override
     public void runOpMode() throws InterruptedException {
         OmniChassisWithVision chassis = new OmniChassisWithVision(hardwareMap, telemetry);
-        double heading = chassis.getHeading();
 
         waitForStart();
 
-        chassis.moveRobotDistance(0.75, 0.0, heading, 48);
+        chassis.moveRobotForward(0.75, 0.0, 48);
         sleep(5000);
         //chassis.moveToApril(3, 12, 0);
         //chassis.setArmPosition(6200, 1.0);
