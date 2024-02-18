@@ -61,7 +61,7 @@ public class OmniChassisWithVision
     private final static double MAX_AUTO_SPEED  = 0.3;   //  Clip the approach speed to this max value (adjust for your robot)
     private final static double MAX_AUTO_STRAFE = 0.3;   //  Clip the approach speed to this max value (adjust for your robot)
     private final static double MAX_AUTO_TURN   = 0.3;   //  Clip the turn speed to this max value (adjust for your robot) NOTE!!!! Was 0.3
-    private final static boolean DEBUG          = false;
+    private final static boolean DEBUG          = true;
 
     HardwareMap hardwareMap;
     Telemetry telemetry;
@@ -131,9 +131,7 @@ public class OmniChassisWithVision
         rightFrontDrive.setDirection(DcMotor.Direction.FORWARD);
         rightBackDrive.setDirection(DcMotor.Direction.FORWARD);
 
-        rightFrontDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        rightFrontDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-
+        rightFrontDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         leftFrontDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         leftBackDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         rightBackDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
@@ -268,8 +266,15 @@ public class OmniChassisWithVision
 
     public void turnRobotToHeading(double heading, double maxPower)
     {
+        final double TURN_GAIN = 0.03;        // 0.1 power per degree error
+        final double TURN_I    = 0.003;
+
         double sumError = 0.0;
         double prevError = 0;
+
+        // Correct target heading
+        while (heading > 180) heading -= 360;
+        while (heading <= -180) heading += 360;
 
         double error = heading - getHeading();
         // Normalize the error to be within +/- 180 degrees
@@ -327,6 +332,12 @@ public class OmniChassisWithVision
             leftBackPower /= max;
             rightBackPower /= max;
         }
+
+//        telemetry.addData("leftFrontPower", "%5.2f", leftFrontPower);
+//        telemetry.addData("rightFrontPower", "%5.2f", rightFrontPower);
+//        telemetry.addData("leftBackPower", "%5.2f", leftBackPower);
+//        telemetry.addData("rightBackPower", "%5.2f", rightBackPower);
+//        telemetry.update();
 
         // Send powers to the wheels.
         leftFrontDrive.setPower(leftFrontPower);
