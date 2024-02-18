@@ -34,12 +34,13 @@ public class MarkerVisionProcessor implements VisionProcessor {
     @Override
     public Object processFrame(Mat frame, long captureTimeNanos) {
 //        Imgproc.cvtColor(frame, hsvMat, Imgproc.COLOR_RGB2HSV);
-        inRange(frame, new Scalar(20.0,20.0,20.0,0.0), new Scalar(255.0,70.0,200.0,255.0), frame);
+        Mat outframe = new Mat();
+        inRange(frame, new Scalar(20.0,20.0,20.0,0.0), new Scalar(255.0,70.0,255.0,255.0), outframe);
 
-        Mat m = new Mat(frame, rectMiddle);
+        Mat m = new Mat(outframe, rectMiddle);
         int middleCount = Core.countNonZero(m);
 
-        Mat r = new Mat(frame, rectRight);
+        Mat r = new Mat(outframe, rectRight);
         int rightCount = Core.countNonZero(r);
         String middle = "" + middleCount;
         String right = "" + rightCount;
@@ -47,8 +48,8 @@ public class MarkerVisionProcessor implements VisionProcessor {
         Point rpos = new Point(500, 155);
         int fontFace = Imgproc.FONT_HERSHEY_SIMPLEX;
         Scalar color = new Scalar(255, 0, 0);
-        Imgproc.putText(frame, middle, mpos, fontFace, 1,  color);
-        Imgproc.putText(frame, right, rpos, fontFace, 1,  color);
+        Imgproc.putText(outframe, middle, mpos, fontFace, 1,  color);
+        Imgproc.putText(outframe, right, rpos, fontFace, 1,  color);
 
         if(middleCount > 1000){
             location = Location.MIDDLE;

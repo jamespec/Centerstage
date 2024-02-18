@@ -61,7 +61,7 @@ public class OmniMotorChassisAuto extends LinearOpMode {
         telemetry.addLine("Moving Forward 1000 at power 0.2");
         telemetry.update();
 
-        chassis.moveForward(1000,0.2 );
+        // chassis.moveForward(1000,0.2 );
 
         telemetry.addLine("Move complete");
         telemetry.update();

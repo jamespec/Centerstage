@@ -74,15 +74,18 @@ public class OmniChassisWithVision
     private final DcMotor rightFrontDrive;  //  Used to control the right front drive wheel
     private final DcMotor leftBackDrive;    //  Used to control the left back drive wheel
     private final DcMotor rightBackDrive;
+    private final DcMotor odometry;
     private final DcMotor arm;
     private final Servo   intake;
+
+    MarkerVisionProcessor visionProcessor;
 
     OmniChassisWithVision(HardwareMap hardwareMap, Telemetry telemetry)
     {
         this.hardwareMap = hardwareMap;
         this.telemetry = telemetry;
 
-        MarkerVisionProcessor visionProcessor = new MarkerVisionProcessor();
+        visionProcessor = new MarkerVisionProcessor();
 
         // Create the AprilTag processor by using a builder.
         aprilTag = new AprilTagProcessor.Builder().build();
@@ -98,11 +101,11 @@ public class OmniChassisWithVision
 
         visionPortal = new VisionPortal.Builder()
                 .setCamera(hardwareMap.get(WebcamName.class, "Webcam 1"))
-                //.addProcessor(visionProcessor)
+                .addProcessor(visionProcessor)
                 .addProcessor(aprilTag)
                 .build();
 
-        setManualExposure(6, 250);  // Use low exposure time to reduce motion blur
+        // setManualExposure(6, 250);  // Use low exposure time to reduce motion blur
 
         // Initialize the hardware variables. Note that the strings used here as parameters
         // to 'get' must match the names assigned during the robot configuration.
@@ -111,6 +114,8 @@ public class OmniChassisWithVision
         rightFrontDrive = hardwareMap.get(DcMotor.class, "right_front");
         leftBackDrive = hardwareMap.get(DcMotor.class, "left_back");
         rightBackDrive = hardwareMap.get(DcMotor.class, "right_back");
+        odometry = hardwareMap.get(DcMotor.class, "odometry");
+
         intake = hardwareMap.get(Servo.class, "intake");
         arm = hardwareMap.get(DcMotor.class, "arm");
 
@@ -146,13 +151,18 @@ public class OmniChassisWithVision
 
     public void moveToApril(int targetApril, int desiredDistance, int sideOffset)
     {
-        double drive = 0.1;      // Desired forward power/speed (-1 to +1)
-        double strafe = 0.1;     // Desired strafe power/speed (-1 to +1)
-        double turn = 0.1;       // Desired turning power/speed (-1 to +1)
+        double drive = 0.2;      // Desired forward power/speed (-1 to +1)
+        double strafe = 0.2;     // Desired strafe power/speed (-1 to +1)
+        double turn = 0.2;       // Desired turning power/speed (-1 to +1)
         boolean targetFound = false;
         AprilTagDetection desiredTag = null;
 
-        while (Math.abs(drive) > 0.045 || Math.abs(strafe) > 0.045 || Math.abs(turn) > 0.045) {
+        double rangeError = 100.0;
+        double headingError = 1000.0;
+        double yawError = 100.0;
+        //(Math.abs(drive) > 0.045 || Math.abs(strafe) > 0.045 || Math.abs(turn) > 0.045) {
+
+        while (Math.abs(rangeError) > 1 || Math.abs(headingError) > 4.0 || Math.abs(yawError) > 4.0) {
             // Step through the list of detected tags and look for a matching tag
             List<AprilTagDetection> currentDetections = aprilTag.getDetections();
             for (AprilTagDetection detection : currentDetections) {
@@ -190,9 +200,9 @@ public class OmniChassisWithVision
 
             // If Left Bumper is being pressed, AND we have found the desired target, Drive to target Automatically .
             // Determine heading, range and Yaw (tag image rotation) error so we can use them to control the robot automatically.
-            double rangeError = (desiredTag.ftcPose.range - desiredDistance);
-            double headingError = -desiredTag.ftcPose.bearing - sideOffset;
-            double yawError = desiredTag.ftcPose.yaw;
+            rangeError = (desiredTag.ftcPose.range - desiredDistance);
+            headingError = -desiredTag.ftcPose.bearing - sideOffset;
+            yawError = desiredTag.ftcPose.yaw;
 
             if (Math.abs(rangeError) > 0.2) {
                 drive = rangeError * SPEED_GAIN;
@@ -213,6 +223,7 @@ public class OmniChassisWithVision
             moveRobot(drive, strafe, turn);
             sleep(10);
         }
+        moveRobot(0.0, 0.0, 0.0);
     }
 
     public void moveRobotForward(double maxDrive, double strafe, double distInches)
@@ -220,10 +231,10 @@ public class OmniChassisWithVision
         double heading = getHeading();
 
         int distTicks = (int)((distInches * 25.4)/ (Math.PI * 48.0) * 2000.0);
-        rightFrontDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        odometry.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
         double sumError = 0.0;
-        int currentPos = -rightFrontDrive.getCurrentPosition();
+        int currentPos = -odometry.getCurrentPosition();
         double prevError = 0;
         double error = (distTicks - currentPos)/339.0;  //converted to inches, 339 ticks/inch
 
@@ -255,7 +266,7 @@ public class OmniChassisWithVision
             moveRobot( drive, strafe, turn );
 
             sleep(10);
-            currentPos = -rightFrontDrive.getCurrentPosition();
+            currentPos = -odometry.getCurrentPosition();
             prevError = error;
             error = (distTicks - currentPos)/339.0;//inches
         }
@@ -428,6 +439,10 @@ public class OmniChassisWithVision
             gainControl.setGain(gain);
             sleep(20);
         }
+    }
+
+    public MarkerVisionProcessor.Location getLocation() {
+        return visionProcessor.getLocation();
     }
 
     private void sleep( int milli ) {

@@ -32,9 +32,11 @@ package org.firstinspires.ftc.teamcode;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
+
 @Autonomous(name="SimpleAutoTest")
 public class SimpleAutoTest extends LinearOpMode
 {
+
     @Override
     public void runOpMode() throws InterruptedException {
         OmniChassisWithVision chassis = new OmniChassisWithVision(hardwareMap, telemetry);
@@ -42,9 +44,36 @@ public class SimpleAutoTest extends LinearOpMode
 
         waitForStart();
 
-//        chassis.turnRobotToHeading(heading+90, 0.4);
-        chassis.moveRobotForward(0.5, 0.0, 48);
-        sleep(5000);
+        switch (chassis.getLocation() ) {
+            case RIGHT:
+                chassis.moveRobotForward(0.5, 0.0, 27);
+                chassis.turnRobotToHeading(heading+90, 0.4);
+                chassis.moveRobotForward(0.5, 0.0, -1);
+                chassis.setArmPosition(500, 0.3);
+                chassis.moveRobotForward(0.5, 0.0, 60);
+                break;
+
+            case MIDDLE:
+                chassis.moveRobotForward(0.5, 0.0, 40);
+                chassis.setArmPosition(500, 0.3);
+                chassis.moveRobotForward(0.5, 0.0, 10);
+                chassis.turnRobotToHeading(heading+90, 0.4);
+                chassis.moveRobotForward(0.5, 0.0, 60);
+                break;
+
+            case LEFT:
+                chassis.moveRobotForward(0.5, 0.0, 27);
+                chassis.turnRobotToHeading(heading+90, 0.4);
+                chassis.moveRobotForward(0.5, 0.0, 21);
+                chassis.setArmPosition(500, 0.3);
+                chassis.moveRobotForward(0.5, 0.0, 39);
+                break;
+        }
+
+        //chassis.turnRobotToHeading(heading-90, 0.4);
+
+        //chassis.moveRobotForward(0.5, 0.0, 48);
+        //sleep(5000);
         //chassis.moveToApril(3, 12, 0);
         //chassis.setArmPosition(6200, 1.0);
         //chassis.drop();
