@@ -85,6 +85,7 @@ public class OmniDriverWithAprilTagRecognition extends LinearOpMode
     private DcMotor rightBackDrive   = null;
     private DcMotor arm = null;
     private Servo intake = null;//  Used to control the right back drive wheel
+    private Servo drone;
     private IMU imu         = null;      // Control/Expansion Hub IMU
 
     private static final boolean USE_WEBCAM = true;  // Set true to use a webcam, or false for a phone camera
@@ -111,6 +112,7 @@ public class OmniDriverWithAprilTagRecognition extends LinearOpMode
         leftBackDrive  = hardwareMap.get(DcMotor.class, "left_back");
         rightBackDrive = hardwareMap.get(DcMotor.class, "right_back");
         intake = hardwareMap.get(Servo.class, "intake");
+        drone = hardwareMap.get(Servo.class, "drone");
         arm = hardwareMap.get(DcMotor.class, "arm");
 
         /* The next two lines define Hub orientation.
@@ -277,6 +279,10 @@ public class OmniDriverWithAprilTagRecognition extends LinearOpMode
             if (gamepad2.y) {
                 // Drop
                 intake.setPosition(0);
+            }
+            if (gamepad2.back) {
+                // Launch
+                drone.setPosition(0.35);
             }
 
             sleep(10);

@@ -50,27 +50,28 @@ public class BlueBackstage extends LinearOpMode
             case RIGHT:
                 telemetry.addLine("RIGHT");
                 telemetry.update();
-                sleep(5000);
+                sleep(1000);
                 chassis.moveRobotForward(0.5, 0.0, 26);
                 chassis.turnRobotToHeading(heading+90, 0.4);
                 chassis.moveRobotForward(0.5, 0.0, -3);
                 chassis.setArmPosition(500, 0.3);
                 chassis.moveRobotForward(0.5, 0.0, 10);
-                chassis.setArmPosition(5500, 0.3);
-                chassis.moveToApril(3,12,0);
                 break;
 
             case MIDDLE:
                 telemetry.addLine("MIDDLE");
                 telemetry.update();
-                sleep(5000);
+                sleep(1000);
                 chassis.moveRobotForward(0.5, 0.0, 40);
                 chassis.setArmPosition(500, 0.3);
                 chassis.moveRobotForward(0.5, 0.0, 10);
                 chassis.turnRobotToHeading(heading+90, 0.4);
                 chassis.moveRobotForward(0.5, 0.0, 10);
-                chassis.setArmPosition(5500, 0.3);
-                chassis.moveToApril(2,12,0);
+                chassis.turnRobotToHeading(heading+130, 0.4);
+                chassis.setArmPosition(6200, 1.0);
+                chassis.moveToApril(2,12,0, 5);
+                chassis.drop();
+                chassis.setArmPosition(5000, 0.2);
                 break;
 
             case LEFT:

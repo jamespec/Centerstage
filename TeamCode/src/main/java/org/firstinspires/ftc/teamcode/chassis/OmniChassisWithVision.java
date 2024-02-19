@@ -67,6 +67,7 @@ public class OmniChassisWithVision
     private final DcMotor odometry;
     private final DcMotor arm;
     private final Servo   intake;
+    private final Servo   drone;
 
     public OmniChassisWithVision(HardwareMap hardwareMap, Telemetry telemetry)
     {
@@ -89,8 +90,8 @@ public class OmniChassisWithVision
 
         visionPortal = new VisionPortal.Builder()
                 .setCamera(hardwareMap.get(WebcamName.class, "Webcam 1"))
-                .addProcessor(visionProcessor)
                 .addProcessor(aprilTag)
+                .addProcessor(visionProcessor)
                 .build();
 
         telemetry.addData("Camera", "Waiting");
@@ -107,6 +108,7 @@ public class OmniChassisWithVision
         odometry = hardwareMap.get(DcMotor.class, "odometry");
 
         intake = hardwareMap.get(Servo.class, "intake");
+        drone = hardwareMap.get(Servo.class, "drone");
         arm = hardwareMap.get(DcMotor.class, "arm");
 
         /* The next two lines define Hub orientation.
@@ -154,22 +156,27 @@ public class OmniChassisWithVision
         telemetry.update();
     }
 
-    // Automatically move robot in front of an April Tag, 'desiredDistance' back and 'sideOffset' to the side.
-    public void moveToApril(int targetApril, double desiredDistance, double sideOffset)
-    {
-        final double SPEED_GAIN      = 0.04;      // Forward Speed Control "Gain".
-        final double STRAFE_GAIN     = 0.015;     // Strafe Speed Control "Gain".
-        final double TURN_GAIN       = 0.02;        // Turn Control "Gain".
+    public void moveToApril(int targetApril, double desiredDistance, double sideOffset ) {
+        moveToApril( targetApril, desiredDistance, sideOffset, 30000);
+    }
 
-        final double MAX_AUTO_SPEED  = 0.15;   //  Clip the approach speed to this max value (adjust for your robot)
-        final double MAX_AUTO_STRAFE = 0.15;   //  Clip the approach speed to this max value (adjust for your robot)
-        final double MAX_AUTO_TURN   = 0.15;   //  Clip the turn speed to this max value (adjust for your robot) NOTE!!!! Was 0.3
+    // Automatically move robot in front of an April Tag, 'desiredDistance' back and 'sideOffset' to the side.
+    public void moveToApril(int targetApril, double desiredDistance, double sideOffset, long maxTime )
+    {
+        final double SPEED_GAIN      = 0.04;  // Forward Speed Control "Gain".
+        final double STRAFE_GAIN     = 0.02;  // Strafe Speed Control "Gain".
+        final double TURN_GAIN       = 0.02;  // Turn Control "Gain".
+
+        final double MAX_AUTO_SPEED  = 0.3;   //  Clip the approach speed to this max value (adjust for your robot)
+        final double MAX_AUTO_STRAFE = 0.2;   //  Clip the approach speed to this max value (adjust for your robot)
+        final double MAX_AUTO_TURN   = 0.2;   //  Clip the turn speed to this max value (adjust for your robot) NOTE!!!! Was 0.3
 
         double rangeError = 100.0;
         double headingError = 1000.0;
         double yawError = 100.0;
 
-        // setManualExposure(6, 250);  // Use low exposure time to reduce motion blur
+        setManualExposure(6, 250);  // Use low exposure time to reduce motion blur
+        long start = System.currentTimeMillis();
 
         while (Math.abs(rangeError) > 1.0 || Math.abs(headingError) > 4.0 || Math.abs(yawError) > 4.0) {
             AprilTagDetection desiredTag = null;
@@ -206,8 +213,11 @@ public class OmniChassisWithVision
                 moveRobot(0.0, 0.0, 0.0);
                 telemetry.addLine("Target not found, giving up!\n");
                 telemetry.update();
-                sleep(5000);
-                return;
+                sleep(10);
+                if( System.currentTimeMillis() > start+(maxTime*1000) )
+                    break;
+                else
+                    continue;
             }
 
             rangeError = (desiredTag.ftcPose.range - desiredDistance);
@@ -215,14 +225,13 @@ public class OmniChassisWithVision
             yawError = desiredTag.ftcPose.yaw;
 
             double drive = rangeError * SPEED_GAIN;
-            if (Math.abs(drive) < 0.10)
-                drive = Math.signum(drive) * 0.10; // Minimum power to overcome the dead zone of the motor.
+//            if (Math.abs(drive) < 0.10)
+//                drive = Math.signum(drive) * 0.10; // Minimum power to overcome the dead zone of the motor.
 
             // Use the speed and turn "gains" to calculate how we want the robot to move.
             drive = Range.clip(drive, -MAX_AUTO_SPEED, MAX_AUTO_SPEED);
             double turn = Range.clip(headingError * TURN_GAIN, -MAX_AUTO_TURN, MAX_AUTO_TURN);
-            // double strafe = Range.clip(-yawError * STRAFE_GAIN, -MAX_AUTO_STRAFE, MAX_AUTO_STRAFE);
-            double strafe = Range.clip(yawError * STRAFE_GAIN, -MAX_AUTO_STRAFE, MAX_AUTO_STRAFE);
+            double strafe = Range.clip(-yawError * STRAFE_GAIN, -MAX_AUTO_STRAFE, MAX_AUTO_STRAFE);
             telemetry.addData("Auto", "Drive %5.2f, Strafe %5.2f, Turn %5.2f ", drive, strafe, turn);
 
             // Apply desired axes motions to the drivetrain.
@@ -230,6 +239,8 @@ public class OmniChassisWithVision
             telemetry.update();
 
             sleep(10);
+            if( System.currentTimeMillis() > start+(maxTime*1000) )
+                break;
         }
         moveRobot(0.0, 0.0, 0.0);
     }
@@ -392,6 +403,16 @@ public class OmniChassisWithVision
     public void drop()
     {
         intake.setPosition(0);
+    }
+
+    public void launch()
+    {
+        drone.setPosition(0.25);
+    }
+
+    public void setDrone(double power)
+    {
+        drone.setPosition(power);
     }
 
     public void setArmPosition(int position, double power)
