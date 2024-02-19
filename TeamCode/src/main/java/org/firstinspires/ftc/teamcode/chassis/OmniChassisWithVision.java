@@ -27,7 +27,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.firstinspires.ftc.teamcode;
+package org.firstinspires.ftc.teamcode.chassis;
 
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -52,22 +52,12 @@ import java.util.concurrent.TimeUnit;
 
 public class OmniChassisWithVision
 {
-    private final static double P_TURN_GAIN     = 0.04;      // Larger is more responsive, but also less stable
-    private final static double SPEED_GAIN      = 0.04;      // Forward Speed Control "Gain".
-    private final static double SPEED_I         = 0.02;
-    private final static double STRAFE_GAIN     = 0.015;     // Strafe Speed Control "Gain".
-    private final static double TURN_GAIN       = 0.02;        // Turn Control "Gain".
-    private final static double TURN_I          = 0.02;
-    private final static double MAX_AUTO_SPEED  = 0.3;   //  Clip the approach speed to this max value (adjust for your robot)
-    private final static double MAX_AUTO_STRAFE = 0.3;   //  Clip the approach speed to this max value (adjust for your robot)
-    private final static double MAX_AUTO_TURN   = 0.3;   //  Clip the turn speed to this max value (adjust for your robot) NOTE!!!! Was 0.3
-    private final static boolean DEBUG          = true;
-
     HardwareMap hardwareMap;
     Telemetry telemetry;
 
     private final VisionPortal visionPortal;
     private final AprilTagProcessor aprilTag;
+    private final MarkerVisionProcessor visionProcessor;
 
     private final IMU     imu;              // Control/Expansion Hub IMU
     private final DcMotor leftFrontDrive;   //  Used to control the left front drive wheel
@@ -78,9 +68,7 @@ public class OmniChassisWithVision
     private final DcMotor arm;
     private final Servo   intake;
 
-    MarkerVisionProcessor visionProcessor;
-
-    OmniChassisWithVision(HardwareMap hardwareMap, Telemetry telemetry)
+    public OmniChassisWithVision(HardwareMap hardwareMap, Telemetry telemetry)
     {
         this.hardwareMap = hardwareMap;
         this.telemetry = telemetry;
@@ -105,7 +93,9 @@ public class OmniChassisWithVision
                 .addProcessor(aprilTag)
                 .build();
 
-        // setManualExposure(6, 250);  // Use low exposure time to reduce motion blur
+        telemetry.addData("Camera", "Waiting");
+        telemetry.update();
+        // Carry on, we'll check for the vision being ready at the end.
 
         // Initialize the hardware variables. Note that the strings used here as parameters
         // to 'get' must match the names assigned during the robot configuration.
@@ -141,28 +131,50 @@ public class OmniChassisWithVision
         leftBackDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         rightBackDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
+        odometry.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+
         arm.setDirection(DcMotor.Direction.FORWARD);
         arm.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         arm.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
-        telemetry.addData("Waiting for start", "");
+        // Wait for vision to finish initializing, only 10 secs.
+        long start = System.currentTimeMillis();
+        while ( visionPortal.getCameraState() != VisionPortal.CameraState.STREAMING &&
+                System.currentTimeMillis() < start + 10000 ) {
+            sleep(100);
+        }
+
+        if( visionPortal.getCameraState() == VisionPortal.CameraState.STREAMING ) {
+            // setManualExposure(6, 250);  // Use low exposure time to reduce motion blur
+            telemetry.addLine("Waiting for start");
+        }
+        else
+            telemetry.addLine("Waiting for start\n*** No Vision ***");
+
         telemetry.update();
     }
 
-    public void moveToApril(int targetApril, int desiredDistance, int sideOffset)
+    // Automatically move robot in front of an April Tag, 'desiredDistance' back and 'sideOffset' to the side.
+    public void moveToApril(int targetApril, double desiredDistance, double sideOffset)
     {
-        double drive = 0.2;      // Desired forward power/speed (-1 to +1)
-        double strafe = 0.2;     // Desired strafe power/speed (-1 to +1)
-        double turn = 0.2;       // Desired turning power/speed (-1 to +1)
-        boolean targetFound = false;
-        AprilTagDetection desiredTag = null;
+        final double SPEED_GAIN      = 0.04;      // Forward Speed Control "Gain".
+        final double STRAFE_GAIN     = 0.015;     // Strafe Speed Control "Gain".
+        final double TURN_GAIN       = 0.02;        // Turn Control "Gain".
+
+        final double MAX_AUTO_SPEED  = 0.15;   //  Clip the approach speed to this max value (adjust for your robot)
+        final double MAX_AUTO_STRAFE = 0.15;   //  Clip the approach speed to this max value (adjust for your robot)
+        final double MAX_AUTO_TURN   = 0.15;   //  Clip the turn speed to this max value (adjust for your robot) NOTE!!!! Was 0.3
 
         double rangeError = 100.0;
         double headingError = 1000.0;
         double yawError = 100.0;
-        //(Math.abs(drive) > 0.045 || Math.abs(strafe) > 0.045 || Math.abs(turn) > 0.045) {
 
-        while (Math.abs(rangeError) > 1 || Math.abs(headingError) > 4.0 || Math.abs(yawError) > 4.0) {
+        // setManualExposure(6, 250);  // Use low exposure time to reduce motion blur
+
+        while (Math.abs(rangeError) > 1.0 || Math.abs(headingError) > 4.0 || Math.abs(yawError) > 4.0) {
+            AprilTagDetection desiredTag = null;
+            boolean targetFound = false;
+
             // Step through the list of detected tags and look for a matching tag
             List<AprilTagDetection> currentDetections = aprilTag.getDetections();
             for (AprilTagDetection detection : currentDetections) {
@@ -186,41 +198,37 @@ public class OmniChassisWithVision
 
             // Tell the driver what we see, and what to do.
             if (targetFound) {
-                telemetry.addData("\n>", "HOLD Left-Bumper to Drive to Target\n");
                 telemetry.addData("Found", "ID %d (%s)", desiredTag.id, desiredTag.metadata.name);
                 telemetry.addData("Range", "%5.1f inches", desiredTag.ftcPose.range);
                 telemetry.addData("Bearing", "%3.0f degrees", desiredTag.ftcPose.bearing);
                 telemetry.addData("Yaw", "%3.0f degrees", desiredTag.ftcPose.yaw);
             } else {
+                moveRobot(0.0, 0.0, 0.0);
                 telemetry.addLine("Target not found, giving up!\n");
                 telemetry.update();
                 sleep(5000);
                 return;
             }
 
-            // If Left Bumper is being pressed, AND we have found the desired target, Drive to target Automatically .
-            // Determine heading, range and Yaw (tag image rotation) error so we can use them to control the robot automatically.
             rangeError = (desiredTag.ftcPose.range - desiredDistance);
             headingError = -desiredTag.ftcPose.bearing - sideOffset;
             yawError = desiredTag.ftcPose.yaw;
 
-            if (Math.abs(rangeError) > 0.2) {
-                drive = rangeError * SPEED_GAIN;
-                if (Math.abs(drive) < 0.10)
-                    drive = Math.signum(drive) * 0.10;
-            } else
-                drive = 0.0;
+            double drive = rangeError * SPEED_GAIN;
+            if (Math.abs(drive) < 0.10)
+                drive = Math.signum(drive) * 0.10; // Minimum power to overcome the dead zone of the motor.
 
             // Use the speed and turn "gains" to calculate how we want the robot to move.
             drive = Range.clip(drive, -MAX_AUTO_SPEED, MAX_AUTO_SPEED);
-            turn = Range.clip(headingError * TURN_GAIN, -MAX_AUTO_TURN, MAX_AUTO_TURN);
-            strafe = Range.clip(-yawError * STRAFE_GAIN, -MAX_AUTO_STRAFE, MAX_AUTO_STRAFE);
-
+            double turn = Range.clip(headingError * TURN_GAIN, -MAX_AUTO_TURN, MAX_AUTO_TURN);
+            // double strafe = Range.clip(-yawError * STRAFE_GAIN, -MAX_AUTO_STRAFE, MAX_AUTO_STRAFE);
+            double strafe = Range.clip(yawError * STRAFE_GAIN, -MAX_AUTO_STRAFE, MAX_AUTO_STRAFE);
             telemetry.addData("Auto", "Drive %5.2f, Strafe %5.2f, Turn %5.2f ", drive, strafe, turn);
-            telemetry.update();
 
             // Apply desired axes motions to the drivetrain.
             moveRobot(drive, strafe, turn);
+            telemetry.update();
+
             sleep(10);
         }
         moveRobot(0.0, 0.0, 0.0);
@@ -228,6 +236,11 @@ public class OmniChassisWithVision
 
     public void moveRobotForward(double maxDrive, double strafe, double distInches)
     {
+        final double SPEED_GAIN         = 0.04;    // Forward Speed Control "Gain".
+        final double SPEED_I            = 0.02;    // Forward Speed I constant
+        final double TURN_CORRECT_GAIN  = 0.04;    // Larger is more responsive, but also less stable
+        final double MAX_TURN_CORRECT   = 0.3;     //  Clip the turn speed to this max value (adjust for your robot) NOTE!!!! Was 0.3
+
         double heading = getHeading();
 
         int distTicks = (int)((distInches * 25.4)/ (Math.PI * 48.0) * 2000.0);
@@ -249,21 +262,19 @@ public class OmniChassisWithVision
             double drive = error * SPEED_GAIN + sumError * SPEED_I;
             drive = Range.clip(drive, -maxDrive, maxDrive );
 
-            double turn = getSteeringCorrection(heading, P_TURN_GAIN);
-            turn = Range.clip(turn, -MAX_AUTO_TURN, MAX_AUTO_TURN);
+            double turn = getSteeringCorrection(heading, TURN_CORRECT_GAIN);
+            turn = Range.clip(turn, -MAX_TURN_CORRECT, MAX_TURN_CORRECT);
 
-            if(DEBUG) {
-                telemetry.addData("Heading Correcting Turn Clipped", "%5.2f", turn);
-                telemetry.addData("Distance Ticks:", "%d", distTicks);
-                telemetry.addData("Current Pos", "%d", currentPos);
-                telemetry.addData("Drive Power", "%5.2f", drive);
-                telemetry.addData("error", "%5.2f", error);
-                telemetry.addData("preError", "%5.2f", prevError);
-                telemetry.addData("sumError", "%5.2f", sumError);
-                telemetry.update();
-            }
+            telemetry.addData("Heading Correcting Turn Clipped", "%5.2f", turn);
+            telemetry.addData("Distance Ticks:", "%d", distTicks);
+            telemetry.addData("Current Pos", "%d", currentPos);
+            telemetry.addData("Drive Power", "%5.2f", drive);
+            telemetry.addData("error", "%5.2f", error);
+            telemetry.addData("preError", "%5.2f", prevError);
+            telemetry.addData("sumError", "%5.2f", sumError);
 
             moveRobot( drive, strafe, turn );
+            telemetry.update();
 
             sleep(10);
             currentPos = -odometry.getCurrentPosition();
@@ -302,15 +313,13 @@ public class OmniChassisWithVision
 
             double turn = Range.clip(error * -TURN_GAIN + sumError * -TURN_I, -maxPower, maxPower);
 
-            if(DEBUG) {
-                telemetry.addData("Heading Correcting Turn Clipped", "%5.2f", turn);
-                telemetry.addData("error", "%5.2f", error);
-                telemetry.addData("preError", "%5.2f", prevError);
-                telemetry.addData("sumError", "%5.2f", sumError);
-                telemetry.update();
-            }
+            telemetry.addData("Heading Correcting Turn Clipped", "%5.2f", turn);
+            telemetry.addData("error", "%5.2f", error);
+            telemetry.addData("preError", "%5.2f", prevError);
+            telemetry.addData("sumError", "%5.2f", sumError);
 
             moveRobot( 0.0, 0.0, turn );
+            telemetry.update();
 
             sleep(10);
             prevError = error;
@@ -344,11 +353,10 @@ public class OmniChassisWithVision
             rightBackPower /= max;
         }
 
-//        telemetry.addData("leftFrontPower", "%5.2f", leftFrontPower);
-//        telemetry.addData("rightFrontPower", "%5.2f", rightFrontPower);
-//        telemetry.addData("leftBackPower", "%5.2f", leftBackPower);
-//        telemetry.addData("rightBackPower", "%5.2f", rightBackPower);
-//        telemetry.update();
+        telemetry.addData("leftFrontPower", "%5.2f", leftFrontPower);
+        telemetry.addData("rightFrontPower", "%5.2f", rightFrontPower);
+        telemetry.addData("leftBackPower", "%5.2f", leftBackPower);
+        telemetry.addData("rightBackPower", "%5.2f", rightBackPower);
 
         // Send powers to the wheels.
         leftFrontDrive.setPower(leftFrontPower);
@@ -398,46 +406,24 @@ public class OmniChassisWithVision
 
     private void setManualExposure(int exposureMS, int gain)
     {
-        // Wait for the camera to be open, then use the controls
-        boolean tooLong = false;
-
-        if (visionPortal == null) {
-            return;
+        ExposureControl exposureControl = visionPortal.getCameraControl(ExposureControl.class);
+        if (exposureControl.getMode() != ExposureControl.Mode.Manual) {
+            exposureControl.setMode(ExposureControl.Mode.Manual);
+            sleep(50);
         }
+        exposureControl.setExposure(exposureMS, TimeUnit.MILLISECONDS);
+        sleep(20);
+        GainControl gainControl = visionPortal.getCameraControl(GainControl.class);
+        gainControl.setGain(gain);
+        sleep(20);
+    }
 
-        // Make sure camera is streaming before we try to set the exposure controls
-        if (visionPortal.getCameraState() != VisionPortal.CameraState.STREAMING) {
-            telemetry.addData("Camera", "Waiting");
-            telemetry.update();
-
-            long start = System.currentTimeMillis();
-            while ( !tooLong && visionPortal.getCameraState() != VisionPortal.CameraState.STREAMING ) {
-                sleep(20);
-                if( System.currentTimeMillis() > start + 20000 ) {
-                    tooLong = true;
-                }
-            }
-            if( tooLong )
-                telemetry.addData("Camera", "Took too long");
-            else
-                telemetry.addData("Camera", "Ready");
-
-            telemetry.update();
-        }
-
-        // Set camera controls unless we are stopping.
-        if (!tooLong)
-        {
-            ExposureControl exposureControl = visionPortal.getCameraControl(ExposureControl.class);
-            if (exposureControl.getMode() != ExposureControl.Mode.Manual) {
-                exposureControl.setMode(ExposureControl.Mode.Manual);
-                sleep(50);
-            }
-            exposureControl.setExposure(exposureMS, TimeUnit.MILLISECONDS);
-            sleep(20);
-            GainControl gainControl = visionPortal.getCameraControl(GainControl.class);
-            gainControl.setGain(gain);
-            sleep(20);
+    private void setAutomaticExposure()
+    {
+        ExposureControl exposureControl = visionPortal.getCameraControl(ExposureControl.class);
+        if (exposureControl.getMode() != ExposureControl.Mode.Auto) {
+            exposureControl.setMode(ExposureControl.Mode.Auto);
+            sleep(50);
         }
     }
 

@@ -32,6 +32,8 @@ package org.firstinspires.ftc.teamcode;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
+import org.firstinspires.ftc.teamcode.chassis.OmniChassisWithVision;
+
 
 @Autonomous(name="SimpleAutoTest")
 public class SimpleAutoTest extends LinearOpMode
@@ -44,31 +46,34 @@ public class SimpleAutoTest extends LinearOpMode
 
         waitForStart();
 
-        switch (chassis.getLocation() ) {
-            case RIGHT:
-                chassis.moveRobotForward(0.5, 0.0, 27);
-                chassis.turnRobotToHeading(heading+90, 0.4);
-                chassis.moveRobotForward(0.5, 0.0, -1);
-                chassis.setArmPosition(500, 0.3);
-                chassis.moveRobotForward(0.5, 0.0, 60);
-                break;
+        chassis.moveToApril(2, 12, 0);
+        return;
 
-            case MIDDLE:
-                chassis.moveRobotForward(0.5, 0.0, 40);
-                chassis.setArmPosition(500, 0.3);
-                chassis.moveRobotForward(0.5, 0.0, 10);
-                chassis.turnRobotToHeading(heading+90, 0.4);
-                chassis.moveRobotForward(0.5, 0.0, 60);
-                break;
-
-            case LEFT:
-                chassis.moveRobotForward(0.5, 0.0, 27);
-                chassis.turnRobotToHeading(heading+90, 0.4);
-                chassis.moveRobotForward(0.5, 0.0, 21);
-                chassis.setArmPosition(500, 0.3);
-                chassis.moveRobotForward(0.5, 0.0, 39);
-                break;
-        }
+//        switch (chassis.getLocation() ) {
+//            case RIGHT:
+//                chassis.moveRobotForward(0.5, 0.0, 27);
+//                chassis.turnRobotToHeading(heading+90, 0.4);
+//                chassis.moveRobotForward(0.5, 0.0, -1);
+//                chassis.setArmPosition(500, 0.3);
+//                chassis.moveRobotForward(0.5, 0.0, 60);
+//                break;
+//
+//            case MIDDLE:
+//                chassis.moveRobotForward(0.5, 0.0, 40);
+//                chassis.setArmPosition(500, 0.3);
+//                chassis.moveRobotForward(0.5, 0.0, 10);
+//                chassis.turnRobotToHeading(heading+90, 0.4);
+//                chassis.moveRobotForward(0.5, 0.0, 60);
+//                break;
+//
+//            case LEFT:
+//                chassis.moveRobotForward(0.5, 0.0, 27);
+//                chassis.turnRobotToHeading(heading+90, 0.4);
+//                chassis.moveRobotForward(0.5, 0.0, 21);
+//                chassis.setArmPosition(500, 0.3);
+//                chassis.moveRobotForward(0.5, 0.0, 39);
+//                break;
+//        }
 
         //chassis.turnRobotToHeading(heading-90, 0.4);
 

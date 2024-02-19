@@ -32,6 +32,8 @@ package org.firstinspires.ftc.teamcode;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
+import org.firstinspires.ftc.teamcode.chassis.OmniChassisWithVision;
+
 
 @Autonomous(name="BlueBackstage")
 public class BlueBackstage extends LinearOpMode
