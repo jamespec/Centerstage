@@ -43,9 +43,12 @@ import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.GainCon
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
 import org.firstinspires.ftc.teamcode.vision.MarkerVisionProcessor;
+import org.firstinspires.ftc.teamcode.vision.PixelVisionProcessor;
 import org.firstinspires.ftc.vision.VisionPortal;
 import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
+
+import org.opencv.core.Point;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -56,8 +59,9 @@ public class OmniChassisWithVision
     Telemetry telemetry;
 
     private final VisionPortal visionPortal;
-    private final AprilTagProcessor aprilTag;
-    private final MarkerVisionProcessor visionProcessor;
+    private final AprilTagProcessor aprilTagVisionProcessor;
+    private final MarkerVisionProcessor markerVisionProcessor;
+    private final PixelVisionProcessor pixelVisionProcessor;
 
     private final IMU     imu;              // Control/Expansion Hub IMU
     private final DcMotor leftFrontDrive;   //  Used to control the left front drive wheel
@@ -74,10 +78,11 @@ public class OmniChassisWithVision
         this.hardwareMap = hardwareMap;
         this.telemetry = telemetry;
 
-        visionProcessor = new MarkerVisionProcessor();
+        markerVisionProcessor = new MarkerVisionProcessor();
+        pixelVisionProcessor = new PixelVisionProcessor();
 
         // Create the AprilTag processor by using a builder.
-        aprilTag = new AprilTagProcessor.Builder().build();
+        aprilTagVisionProcessor = new AprilTagProcessor.Builder().build();
 
         // Adjust Image Decimation to trade-off detection-range for detection-rate.
         // eg: Some typical detection data using a Logitech C920 WebCam
@@ -86,12 +91,13 @@ public class OmniChassisWithVision
         // Decimation = 3 ..  Detect 2" Tag from 4  feet away at 30 Frames Per Second
         // Decimation = 3 ..  Detect 5" Tag from 10 feet away at 30 Frames Per Second
         // Note: Decimation can be changed on-the-fly to adapt during a match.
-        aprilTag.setDecimation(2);
+        aprilTagVisionProcessor.setDecimation(2);
 
         visionPortal = new VisionPortal.Builder()
                 .setCamera(hardwareMap.get(WebcamName.class, "Webcam 1"))
-                .addProcessor(aprilTag)
-                .addProcessor(visionProcessor)
+                // .addProcessor(aprilTagVisionProcessor)
+                // .addProcessor(markerVisionProcessor)
+                .addProcessor(pixelVisionProcessor)
                 .build();
 
         telemetry.addData("Camera", "Waiting");
@@ -183,7 +189,7 @@ public class OmniChassisWithVision
             boolean targetFound = false;
 
             // Step through the list of detected tags and look for a matching tag
-            List<AprilTagDetection> currentDetections = aprilTag.getDetections();
+            List<AprilTagDetection> currentDetections = aprilTagVisionProcessor.getDetections();
             for (AprilTagDetection detection : currentDetections) {
                 // Look to see if we have size info on this tag.
                 if (detection.metadata != null) {
@@ -415,14 +421,24 @@ public class OmniChassisWithVision
         drone.setPosition(power);
     }
 
-    public void setArmPosition(int position, double power)
+    public void setArmPosition(int position, double power, boolean wait)
     {
         arm.setTargetPosition(position);
         arm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         arm.setPower(power);
-        while (arm.isBusy()) {
+        while (wait && arm.isBusy()) {
             sleep(10);
         }
+    }
+
+    public int getArmPosition() {
+        return arm.getCurrentPosition();
+    }
+
+    public void setArmPower(double power)
+    {
+        arm.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        arm.setPower(power);
     }
 
     private void setManualExposure(int exposureMS, int gain)
@@ -449,8 +465,10 @@ public class OmniChassisWithVision
     }
 
     public MarkerVisionProcessor.Location getLocation() {
-        return visionProcessor.getLocation();
+        return markerVisionProcessor.getLocation();
     }
+
+    public Point getPixelCenters() { return pixelVisionProcessor.getCenter(); }
 
     private void sleep( int milli ) {
         try {
