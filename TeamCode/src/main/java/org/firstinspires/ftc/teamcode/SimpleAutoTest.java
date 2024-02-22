@@ -41,7 +41,7 @@ public class SimpleAutoTest extends LinearOpMode
 
     @Override
     public void runOpMode() throws InterruptedException {
-        OmniChassisWithVision chassis = new OmniChassisWithVision(hardwareMap, telemetry);
+        OmniChassisWithVision chassis = new OmniChassisWithVision(hardwareMap, telemetry, 0);
         double heading = chassis.getHeading();
 
         waitForStart();

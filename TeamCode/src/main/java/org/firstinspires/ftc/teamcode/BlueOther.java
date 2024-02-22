@@ -35,8 +35,8 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import org.firstinspires.ftc.teamcode.chassis.OmniChassisWithVision;
 
 
-@Autonomous(name="BlueBackstage")
-public class BlueBackstage extends LinearOpMode
+@Autonomous(name="BlueOther")
+public class BlueOther extends LinearOpMode
 {
 
     @Override
@@ -55,7 +55,7 @@ public class BlueBackstage extends LinearOpMode
                 chassis.turnRobotToHeading(heading+90, 0.4);
                 chassis.moveRobotForward(0.5, 0.0, -3);
                 chassis.setArmPosition(500, 0.3, true);
-                chassis.moveRobotForward(0.5, 0.0, 22);
+                chassis.moveRobotForward(0.5, 0.0, 72);
                 chassis.setArmPosition(6300, 1.0, false);
                 chassis.moveToApril(3,13.5,-5, 5);
                 chassis.setArmPosition(6300, 1.0, true);
@@ -72,11 +72,11 @@ public class BlueBackstage extends LinearOpMode
                 sleep(1000);
                 chassis.moveRobotForward(0.5, 0.0, 40);
                 chassis.setArmPosition(500, 0.3, true);
-                chassis.moveRobotForward(0.5, 0.0, -17);
+                chassis.moveRobotForward(0.5, 0.0, -15.5);
                 chassis.turnRobotToHeading(heading+90, 0.4);
+                chassis.moveRobotForward(0.5, 0.0, 65);
                 chassis.setArmPosition(6300, 1.0, false);
-                chassis.moveRobotForward(0.5, 0.0, 20);
-                chassis.moveToApril(2,13.5,5, 5);
+                chassis.moveToApril(2,13.5,5, 3);
                 chassis.setArmPosition(6300, 1.0, true);
                 sleep(500);
                 chassis.drop();
@@ -88,8 +88,10 @@ public class BlueBackstage extends LinearOpMode
                 chassis.moveRobotForward(0.5, 0.0, 26);
                 chassis.turnRobotToHeading(heading+90, 0.4);
                 chassis.moveRobotForward(0.5, 0.0, 19);
+                chassis.setArmPosition(500, 0.7, true);
+                chassis.moveRobotForward(0.5, 0.0, 50);
                 chassis.setArmPosition(6300, 0.7, false);
-                chassis.moveToApril(1,13.5,2);
+                chassis.moveToApril(1,13.5,0, 5);
                 chassis.setArmPosition(6300, 0.7, true);
                 sleep(500);
                 chassis.drop();

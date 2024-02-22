@@ -58,6 +58,10 @@ public class OmniChassisWithVision
     HardwareMap hardwareMap;
     Telemetry telemetry;
 
+    public static final int Marker   = 1;
+    public static final int Pixel    = 2;
+    public static final int AprilTag = 4;
+
     private final VisionPortal visionPortal;
     private final AprilTagProcessor aprilTagVisionProcessor;
     private final MarkerVisionProcessor markerVisionProcessor;
@@ -73,7 +77,7 @@ public class OmniChassisWithVision
     private final Servo   intake;
     private final Servo   drone;
 
-    public OmniChassisWithVision(HardwareMap hardwareMap, Telemetry telemetry)
+    public OmniChassisWithVision(HardwareMap hardwareMap, Telemetry telemetry, int visionMask )
     {
         this.hardwareMap = hardwareMap;
         this.telemetry = telemetry;
@@ -93,12 +97,19 @@ public class OmniChassisWithVision
         // Note: Decimation can be changed on-the-fly to adapt during a match.
         aprilTagVisionProcessor.setDecimation(2);
 
-        visionPortal = new VisionPortal.Builder()
-                .setCamera(hardwareMap.get(WebcamName.class, "Webcam 1"))
-                // .addProcessor(aprilTagVisionProcessor)
-                // .addProcessor(markerVisionProcessor)
-                .addProcessor(pixelVisionProcessor)
-                .build();
+        VisionPortal.Builder visionBuilder = new VisionPortal.Builder()
+                .setCamera(hardwareMap.get(WebcamName.class, "Webcam 1"));
+
+        if( (visionMask & Marker) > 0 )
+                visionBuilder.addProcessor(markerVisionProcessor);
+
+        if( (visionMask & AprilTag) > 0 )
+            visionBuilder.addProcessor(aprilTagVisionProcessor);
+
+        if( (visionMask & Pixel) > 0 )
+            visionBuilder.addProcessor(pixelVisionProcessor);
+
+        visionPortal = visionBuilder.build();
 
         telemetry.addData("Camera", "Waiting");
         telemetry.update();
@@ -468,7 +479,7 @@ public class OmniChassisWithVision
         return markerVisionProcessor.getLocation();
     }
 
-    public Point getPixelCenters() { return pixelVisionProcessor.getCenter(); }
+    public Point getPixelCenter() { return pixelVisionProcessor.getCenter(); }
 
     private void sleep( int milli ) {
         try {

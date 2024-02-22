@@ -32,11 +32,9 @@ package org.firstinspires.ftc.teamcode;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.util.Range;
-import org.opencv.core.Point;
 
 import org.firstinspires.ftc.teamcode.chassis.OmniChassisWithVision;
-
-import java.util.List;
+import org.opencv.core.Point;
 
 @TeleOp(name = "OmniDriverTeleOp")
 public class OmniDriverTeleOp extends LinearOpMode {
@@ -47,7 +45,7 @@ public class OmniDriverTeleOp extends LinearOpMode {
 
     @Override
     public void runOpMode() {
-        chassis = new OmniChassisWithVision(hardwareMap, telemetry);
+        chassis = new OmniChassisWithVision(hardwareMap, telemetry, (OmniChassisWithVision.AprilTag | OmniChassisWithVision.Pixel) );
 
         double drive;      // Desired forward power/speed (-1 to +1)
         double strafe;     // Desired strafe power/speed (-1 to +1)
@@ -64,16 +62,16 @@ public class OmniDriverTeleOp extends LinearOpMode {
             // Left/Right triggers turn
             // if both right and left deflected use right (slow)
             if( gamepad1.left_bumper ) {
-                Point center = chassis.getPixelCenters();
+                Point center = chassis.getPixelCenter();
                 if( center != null ) {
-                    turn = 300.0 - center.x;
-                    drive = 400.0 - center.y;
-                    telemetry.addData("Errors - ", "Drive: %5.2f  Strafe: %5.2f", drive, turn);
-                    if (Math.abs(turn) > 10 || Math.abs(drive) > 10) {
-                        drive = Range.clip((drive * 0.001) + Math.signum(drive) * 0.1, -0.3, 0.3);
-                        turn = Range.clip((turn * 0.001) + Math.signum(drive) * 0.1, -0.2, 0.2);
-                        telemetry.addData("Powers - ", "Drive: %5.2f  Strafe: %5.2f", drive, turn);
-                        chassis.moveRobot(drive, 0.0, -turn);
+                    strafe = 304.0 - center.x;
+                    drive = 425.0 - center.y;
+                    telemetry.addData("Errors - ", "Drive: %5.2f  Strafe: %5.2f", drive, strafe);
+                    if (Math.abs(strafe) > 10 || Math.abs(drive) > 10) {
+                        drive = Range.clip((drive * 0.001) + Math.signum(drive) * 0.05, -0.3, 0.3);
+                        strafe = Range.clip((strafe * 0.001) + Math.signum(strafe) * 0.05, -0.2, 0.2);
+                        telemetry.addData("Powers - ", "Drive: %5.2f  Strafe: %5.2f", drive, strafe);
+                        chassis.moveRobot(drive, strafe, 0.0);
                     } else {
                         chassis.moveRobot(0.0, 0.0, 0.0);
                         chassis.drop();
@@ -132,7 +130,7 @@ public class OmniDriverTeleOp extends LinearOpMode {
                 telemetry.addLine("Launch");
             }
 
-            Point center = chassis.getPixelCenters();
+            Point center = chassis.getPixelCenter();
             if( center != null )
                 telemetry.addData("Center: ", "(%5.1f, %5.1f)", center.x, center.y );
 
