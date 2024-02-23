@@ -47,7 +47,6 @@ import org.firstinspires.ftc.teamcode.vision.PixelVisionProcessor;
 import org.firstinspires.ftc.vision.VisionPortal;
 import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
-
 import org.opencv.core.Point;
 
 import java.util.List;
@@ -73,6 +72,7 @@ public class OmniChassisWithVision
     private final DcMotor leftBackDrive;    //  Used to control the left back drive wheel
     private final DcMotor rightBackDrive;
     private final DcMotor odometry;
+    private final DcMotor sodometry;
     private final DcMotor arm;
     private final Servo   intake;
     private final Servo   drone;
@@ -123,6 +123,7 @@ public class OmniChassisWithVision
         leftBackDrive = hardwareMap.get(DcMotor.class, "left_back");
         rightBackDrive = hardwareMap.get(DcMotor.class, "right_back");
         odometry = hardwareMap.get(DcMotor.class, "odometry");
+        sodometry = hardwareMap.get(DcMotor.class, "sodometry");
 
         intake = hardwareMap.get(Servo.class, "intake");
         drone = hardwareMap.get(Servo.class, "drone");
@@ -151,7 +152,7 @@ public class OmniChassisWithVision
         rightBackDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
         odometry.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-
+        sodometry.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         arm.setDirection(DcMotor.Direction.FORWARD);
         arm.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         arm.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
@@ -242,8 +243,6 @@ public class OmniChassisWithVision
             yawError = desiredTag.ftcPose.yaw;
 
             double drive = rangeError * SPEED_GAIN;
-//            if (Math.abs(drive) < 0.10)
-//                drive = Math.signum(drive) * 0.10; // Minimum power to overcome the dead zone of the motor.
 
             // Use the speed and turn "gains" to calculate how we want the robot to move.
             drive = Range.clip(drive, -MAX_AUTO_SPEED, MAX_AUTO_SPEED);
@@ -256,68 +255,16 @@ public class OmniChassisWithVision
             telemetry.update();
 
             sleep(10);
-            if( System.currentTimeMillis() > start+(maxTime*1000) )
+            if (System.currentTimeMillis() > start + (maxTime * 1000))
                 break;
         }
         moveRobot(0.0, 0.0, 0.0);
     }
 
-    public void moveRobotForward(double maxDrive, double strafe, double distInches)
-    {
-        final double SPEED_GAIN         = 0.04;    // Forward Speed Control "Gain".
-        final double SPEED_I            = 0.02;    // Forward Speed I constant
-        final double TURN_CORRECT_GAIN  = 0.04;    // Larger is more responsive, but also less stable
-        final double MAX_TURN_CORRECT   = 0.3;     //  Clip the turn speed to this max value (adjust for your robot) NOTE!!!! Was 0.3
 
-        double heading = getHeading();
-
-        int distTicks = (int)((distInches * 25.4)/ (Math.PI * 48.0) * 2000.0);
-        odometry.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-
-        double sumError = 0.0;
-        int currentPos = -odometry.getCurrentPosition();
-        double prevError = 0;
-        double error = (distTicks - currentPos)/339.0;  //converted to inches, 339 ticks/inch
-
-        // Correct while the error is larger than 0.25 inches or the error in still changing
-        while ( Math.abs(error) > 0.25 || Math.abs(prevError - error) > 0.01) {
-            // If the error is changing no need to collect sumError for I correction.
-            if (Math.abs(error - prevError) < 0.05)
-                sumError += error;
-            else
-                sumError = 0;
-
-            double drive = error * SPEED_GAIN + sumError * SPEED_I;
-            drive = Range.clip(drive, -maxDrive, maxDrive );
-
-            double turn = getSteeringCorrection(heading, TURN_CORRECT_GAIN);
-            turn = Range.clip(turn, -MAX_TURN_CORRECT, MAX_TURN_CORRECT);
-
-            telemetry.addData("Heading Correcting Turn Clipped", "%5.2f", turn);
-            telemetry.addData("Distance Ticks:", "%d", distTicks);
-            telemetry.addData("Current Pos", "%d", currentPos);
-            telemetry.addData("Drive Power", "%5.2f", drive);
-            telemetry.addData("error", "%5.2f", error);
-            telemetry.addData("preError", "%5.2f", prevError);
-            telemetry.addData("sumError", "%5.2f", sumError);
-
-            moveRobot( drive, strafe, turn );
-            telemetry.update();
-
-            sleep(10);
-            currentPos = -odometry.getCurrentPosition();
-            prevError = error;
-            error = (distTicks - currentPos)/339.0;//inches
-        }
-
-        // Stop the robot once we reach the desired position.
-        moveRobot( 0.0, 0.0, 0.0 );
-    }
-
-    public void turnRobotToHeading(double heading, double maxPower)
-    {
+    public void turnRobotToHeading(double heading, double maxPower) {
         final double TURN_GAIN = 0.03;        // 0.1 power per degree error
-        final double TURN_I    = 0.003;
+        final double TURN_I = 0.003;
 
         double sumError = 0.0;
         double prevError = 0;
@@ -361,6 +308,102 @@ public class OmniChassisWithVision
         moveRobot( 0.0, 0.0, 0.0 );
     }
 
+    static double prevMax = 0.275;
+
+    public void moveRobotForward(double maxDrive, double targetInches)
+    {
+        final double DRIVE_P = 0.0225;
+        final double DRIVE_I = 0.015;
+        final double STRAFE_P = 0.035;
+        final double STRAFE_I = 0.02;
+        final double MAX_STRAFE_CORRECT = 0.2;
+        final double TURN_P = 0.04;
+        final double MAX_TURN_CORRECT = 0.3;
+
+        double heading = getHeading();
+        odometry.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        sodometry.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+
+        IPController driveIp = new IPController(targetInches, DRIVE_P, DRIVE_I, 0.05, maxDrive, telemetry);
+        IPController strafeIp = new IPController(0.0, STRAFE_P, STRAFE_I, 0.05, MAX_STRAFE_CORRECT, telemetry);
+
+        double currentInches = (-odometry.getCurrentPosition()) / 339.0;
+        double drive  = driveIp.getPower(currentInches);
+
+        while( Math.abs(driveIp.getError()) > 0.25 || Math.abs(driveIp.getErrorChange()) > 0.01
+                || Math.abs(strafeIp.getError()) > 0.25 || Math.abs(strafeIp.getErrorChange()) > 0.01)
+        {
+            double turn = getSteeringCorrection(heading, TURN_P);
+            turn = Range.clip(turn, -MAX_TURN_CORRECT, MAX_TURN_CORRECT);
+
+            double strafeError = (sodometry.getCurrentPosition())/339.0;  // drifting, in inches.
+            double strafe = strafeIp.getPower(strafeError);
+
+            telemetry.addData("Current Pos", "%5.2f", currentInches);
+            telemetry.addData("Drive Power", "%5.2f", drive);
+            telemetry.addData("Strafe Error: ", "%5.2f", strafeError);
+            telemetry.addData("Strafe Correcting: ", "%5.2f", strafe);
+            telemetry.addData("Heading Correcting: ", "%5.2f", turn);
+
+            moveRobot(drive, strafe, turn);
+            telemetry.update();
+
+            sleep(10);
+            currentInches = (-odometry.getCurrentPosition())/339.0;
+            drive = driveIp.getPower(currentInches);
+        }
+
+        moveRobot(0.0, 0.0, 0.0);
+    }
+
+    public void moveRobotStrafe(double maxDrive, double targetInches)
+    {
+        final double DRIVE_P = 0.03;
+        final double DRIVE_I = 0.01;
+        final double STRAFE_P = 0.09;
+        final double STRAFE_I = 0.015;
+        final double MAX_DRIVE_CORRECT = 0.2;
+        final double TURN_P = 0.04;
+        final double MAX_TURN_CORRECT = 0.3;
+
+        double heading = getHeading();
+        odometry.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        sodometry.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+
+        IPController driveIp = new IPController(0.0, DRIVE_P, DRIVE_I, 0.05, MAX_DRIVE_CORRECT, telemetry);
+        IPController strafeIp = new IPController(targetInches, STRAFE_P, STRAFE_I, 0.05, maxDrive, telemetry);
+
+        double currentInches = (sodometry.getCurrentPosition()) / 339.0;
+        double strafe = strafeIp.getPower(currentInches);
+
+
+        while( Math.abs(driveIp.getError()) > 0.25 || Math.abs(driveIp.getErrorChange()) > 0.01
+                || Math.abs(strafeIp.getError()) > 0.25 || Math.abs(strafeIp.getErrorChange()) > 0.01)
+        {
+            double turn = getSteeringCorrection(heading, TURN_P);
+            turn = Range.clip(turn, -MAX_TURN_CORRECT, MAX_TURN_CORRECT);
+
+            double driveError = (odometry.getCurrentPosition())/339.0;  // drifting, in inches.
+            double drive  = -driveIp.getPower(driveError);
+
+            telemetry.addData("Current Pos", "%5.2f", currentInches);
+            telemetry.addData("Drive Power", "%5.2f", drive);
+            telemetry.addData("Drive Error: ", "%5.2f", driveError);
+            telemetry.addData("Strafe Correcting: ", "%5.2f", strafe);
+            telemetry.addData("Heading Correcting: ", "%5.2f", turn);
+
+            moveRobot(drive, strafe, turn);
+            telemetry.update();
+
+            sleep(10);
+            currentInches = (sodometry.getCurrentPosition())/339.0;
+            strafe = strafeIp.getPower(currentInches);
+        }
+
+        moveRobot(0.0, 0.0, 0.0);
+    }
+
+
     public void moveRobot(double drive, double strafe, double turn)
     {
         // Calculate wheel powers.
@@ -374,12 +417,23 @@ public class OmniChassisWithVision
         max = Math.max(max, Math.abs(leftBackPower));
         max = Math.max(max, Math.abs(rightBackPower));
 
-        if (max > 1.0) {
+        if( max > prevMax + 0.075 ) {
+            max = prevMax + 0.075;
+            prevMax = max;
+
+            leftFrontPower *= max;
+            rightFrontPower *= max;
+            leftBackPower *= max;
+            rightBackPower *= max;
+        }
+        else if( max > 1.0 ) {
             leftFrontPower /= max;
             rightFrontPower /= max;
             leftBackPower /= max;
             rightBackPower /= max;
         }
+        else
+            prevMax = max;
 
         telemetry.addData("leftFrontPower", "%5.2f", leftFrontPower);
         telemetry.addData("rightFrontPower", "%5.2f", rightFrontPower);

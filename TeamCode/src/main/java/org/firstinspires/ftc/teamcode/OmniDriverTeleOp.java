@@ -51,6 +51,7 @@ public class OmniDriverTeleOp extends LinearOpMode {
         double strafe;     // Desired strafe power/speed (-1 to +1)
         double turn;       // Desired turning power/speed (-1 to +1)
 
+        boolean captureNewHeading = false;
         double lastHeading = chassis.getHeading();
 
         waitForStart();
@@ -92,16 +93,15 @@ public class OmniDriverTeleOp extends LinearOpMode {
                 drive = -gamepad1.right_stick_y / 3.0;  // Reduce drive rate to 33%.
                 strafe = -gamepad1.right_stick_x / 3.0;  // Reduce strafe rate to 33%.
             } else {
-                // drive using manual POV Joystick mode.  Slow things down to make the robot more controllable.
-                drive = -gamepad1.left_stick_y / 1.5;  // Reduce drive rate to 66%.
-                strafe = -gamepad1.left_stick_x / 1.5;  // Reduce strafe rate to 66%.
+                drive = -gamepad1.left_stick_y;
+                strafe = -gamepad1.left_stick_x;
             }
-            turn = (gamepad1.right_trigger - gamepad1.left_trigger) / 3.0;
+            turn = (gamepad1.right_trigger - gamepad1.left_trigger) / 1.5;
             telemetry.addData("Uncorrected", "Drive %5.2f, Strafe %5.2f, Turn %5.2f ", drive, strafe, turn);
 
             if (Math.abs(turn) > 0.05) {
                 // Turn is requested, get new heading and don't correct
-                lastHeading = chassis.getHeading();
+                captureNewHeading = true;
             } else {
                 turn = chassis.getSteeringCorrection(lastHeading, TURN_CORRECT_GAIN);
                 telemetry.addData("Heading Correcting Turn", "%5.2f", turn);
@@ -136,6 +136,11 @@ public class OmniDriverTeleOp extends LinearOpMode {
 
             telemetry.update();
             sleep(10);
+
+            if( captureNewHeading ) {
+                lastHeading = chassis.getHeading();
+                captureNewHeading = false;
+            }
         }
     }
 }

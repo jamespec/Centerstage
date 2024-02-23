@@ -46,9 +46,9 @@ public class SimpleAutoTest extends LinearOpMode
 
         waitForStart();
 
-        chassis.setDrone(0.25);
+        chassis.moveRobotStrafe(0.5,40.0);
 
-        sleep(10000);
+        //sleep(100000);
 
 //        chassis.moveToApril(1, 12, 0);
 //        chassis.moveRobotForward(0.3, 0.0, -20);
