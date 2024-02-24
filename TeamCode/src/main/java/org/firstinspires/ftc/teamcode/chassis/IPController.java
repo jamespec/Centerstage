@@ -37,6 +37,15 @@ class IPController
       error = 0.0;
    }
 
+   public void adjustTargetPos( double adj)
+   {
+      this.targetPos += adj;
+   }
+
+   public double getTargetPos() {
+      return this.targetPos;
+   }
+
    public double getPower(double currentPos)
    {
       error = targetPos - currentPos;

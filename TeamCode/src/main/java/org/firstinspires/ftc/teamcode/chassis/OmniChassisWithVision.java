@@ -31,6 +31,7 @@ package org.firstinspires.ftc.teamcode.chassis;
 
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.Servo;
@@ -41,6 +42,7 @@ import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.ExposureControl;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.GainControl;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
 import org.firstinspires.ftc.teamcode.vision.MarkerVisionProcessor;
 import org.firstinspires.ftc.teamcode.vision.PixelVisionProcessor;
@@ -73,7 +75,7 @@ public class OmniChassisWithVision
     private final DcMotor rightBackDrive;
     private final DcMotor odometry;
     private final DcMotor sodometry;
-    private final DcMotor arm;
+    private final DcMotorEx arm;
     private final Servo   intake;
     private final Servo   drone;
 
@@ -127,7 +129,7 @@ public class OmniChassisWithVision
 
         intake = hardwareMap.get(Servo.class, "intake");
         drone = hardwareMap.get(Servo.class, "drone");
-        arm = hardwareMap.get(DcMotor.class, "arm");
+        arm = hardwareMap.get(DcMotorEx.class, "arm");
 
         /* The next two lines define Hub orientation.
          * The Default Orientation (shown) is when a hub is mounted horizontally with the printed logo pointing UP and the USB port pointing FORWARD.
@@ -262,9 +264,10 @@ public class OmniChassisWithVision
     }
 
 
+
     public void turnRobotToHeading(double heading, double maxPower) {
         final double TURN_GAIN = 0.03;        // 0.1 power per degree error
-        final double TURN_I = 0.003;
+        final double TURN_I = 0.0125;
 
         double sumError = 0.0;
         double prevError = 0;
@@ -312,10 +315,15 @@ public class OmniChassisWithVision
 
     public void moveRobotForward(double maxDrive, double targetInches)
     {
-        final double DRIVE_P = 0.0375;
-        final double DRIVE_I = 0.02;
+        moveRobotForward(maxDrive, targetInches, 0.5 );
+    }
+
+    public void moveRobotForward(double maxDrive, double targetInches, double maxError)
+    {
+        final double DRIVE_P = 0.035;
+        final double DRIVE_I = 0.025;
         final double STRAFE_P = 0.035;
-        final double STRAFE_I = 0.02;
+        final double STRAFE_I = 0.0175;
         final double MAX_STRAFE_CORRECT = 0.2;
         final double TURN_P = 0.04;
         final double MAX_TURN_CORRECT = 0.3;
@@ -324,17 +332,22 @@ public class OmniChassisWithVision
         odometry.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         sodometry.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
-        IPController driveIp = new IPController(targetInches, DRIVE_P, DRIVE_I, 0.05, maxDrive, telemetry);
-        IPController strafeIp = new IPController(0.0, STRAFE_P, STRAFE_I, 0.05, MAX_STRAFE_CORRECT, telemetry);
+        IPController driveIp = new IPController(targetInches, DRIVE_P, DRIVE_I, 0.1, maxDrive, telemetry);
+        IPController strafeIp = new IPController(0.0, STRAFE_P, STRAFE_I, 0.1, MAX_STRAFE_CORRECT, telemetry);
 
+        double prevInches = 0.0;
         double currentInches = (-odometry.getCurrentPosition()) / 339.0;
         double drive  = driveIp.getPower(currentInches);
 
-        while( Math.abs(driveIp.getError()) > 0.25 || Math.abs(driveIp.getErrorChange()) > 0.01
-                || Math.abs(strafeIp.getError()) > 0.25 || Math.abs(strafeIp.getErrorChange()) > 0.01)
+        while( Math.abs(driveIp.getError()) > maxError || Math.abs(driveIp.getErrorChange()) > 0.01
+                || Math.abs(strafeIp.getError()) > maxError || Math.abs(strafeIp.getErrorChange()) > 0.01)
         {
             double turn = getSteeringCorrection(heading, TURN_P);
             turn = Range.clip(turn, -MAX_TURN_CORRECT, MAX_TURN_CORRECT);
+
+            // Need to drive a little further when the heading is wrong.
+            double distCorrect = getSteeringDistanceCorrection(heading,currentInches - prevInches);
+            driveIp.adjustTargetPos(distCorrect);
 
             double strafeError = (sodometry.getCurrentPosition())/339.0;  // drifting, in inches.
             double strafe = strafeIp.getPower(strafeError);
@@ -344,11 +357,13 @@ public class OmniChassisWithVision
             telemetry.addData("Strafe Error: ", "%5.2f", strafeError);
             telemetry.addData("Strafe Correcting: ", "%5.2f", strafe);
             telemetry.addData("Heading Correcting: ", "%5.2f", turn);
+            telemetry.addData("Distance Correcting: ", "%5.2f", driveIp.getTargetPos()-targetInches);
 
             moveRobot(drive, strafe, turn);
             telemetry.update();
 
             sleep(10);
+            prevInches = currentInches;
             currentInches = (-odometry.getCurrentPosition())/339.0;
             drive = driveIp.getPower(currentInches);
         }
@@ -357,6 +372,12 @@ public class OmniChassisWithVision
     }
 
     public void moveRobotStrafe(double maxDrive, double targetInches)
+    {
+        moveRobotStrafe(maxDrive, targetInches, 0.5);
+    }
+
+
+    public void moveRobotStrafe(double maxDrive, double targetInches, double maxError)
     {
         final double DRIVE_P = 0.0275;
         final double DRIVE_I = 0.01;
@@ -377,8 +398,8 @@ public class OmniChassisWithVision
         double strafe = strafeIp.getPower(currentInches);
 
 
-        while( Math.abs(driveIp.getError()) > 0.25 || Math.abs(driveIp.getErrorChange()) > 0.01
-                || Math.abs(strafeIp.getError()) > 0.25 || Math.abs(strafeIp.getErrorChange()) > 0.01)
+        while( Math.abs(driveIp.getError()) > maxError || Math.abs(driveIp.getErrorChange()) > 0.01
+                || Math.abs(strafeIp.getError()) > maxError || Math.abs(strafeIp.getErrorChange()) > 0.01)
         {
             double turn = getSteeringCorrection(heading, TURN_P);
             turn = Range.clip(turn, -MAX_TURN_CORRECT, MAX_TURN_CORRECT);
@@ -460,6 +481,12 @@ public class OmniChassisWithVision
         return Range.clip(headingError * -proportionalGain, -1, 1);
     }
 
+    public double getSteeringDistanceCorrection(double desiredHeading, double travel)
+    {
+        double headingError = desiredHeading - getHeading();
+        return travel - travel * Math.abs(Math.cos(headingError * Math.PI/180.0));
+    }
+
     public double getHeading()
     {
         YawPitchRollAngles orientation = imu.getRobotYawPitchRollAngles();
@@ -497,6 +524,7 @@ public class OmniChassisWithVision
         arm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         arm.setPower(power);
         while (wait && arm.isBusy()) {
+            telemetry.addData("Arm Current: ", "%5.2f", arm.getCurrent(CurrentUnit.MILLIAMPS));
             sleep(10);
         }
     }
@@ -509,6 +537,7 @@ public class OmniChassisWithVision
     {
         arm.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         arm.setPower(power);
+        telemetry.addData("Arm Current: ", "%5.2f", arm.getCurrent(CurrentUnit.MILLIAMPS));
     }
 
     private void setManualExposure(int exposureMS, int gain)

@@ -41,7 +41,7 @@ public class OmniDriverTeleOp extends LinearOpMode {
     OmniChassisWithVision chassis;
 
     final double TURN_CORRECT_GAIN = 0.04;    // Larger is more responsive, but also less stable
-    final double MAX_TURN_CORRECT = 0.3;     //  Clip the turn speed to this max value (adjust for your robot) NOTE!!!! Was 0.3
+    final double MAX_TURN_CORRECT = 0.4;     //  Clip the turn speed to this max value (adjust for your robot) NOTE!!!! Was 0.3
 
     @Override
     public void runOpMode() {
@@ -94,7 +94,7 @@ public class OmniDriverTeleOp extends LinearOpMode {
                 strafe = -gamepad1.right_stick_x / 3.0;  // Reduce strafe rate to 33%.
             } else {
                 drive = -gamepad1.left_stick_y;
-                strafe = -gamepad1.left_stick_x;
+                strafe = -gamepad1.left_stick_x / 1.2;
             }
             turn = (gamepad1.right_trigger - gamepad1.left_trigger) / 1.5;
             telemetry.addData("Uncorrected", "Drive %5.2f, Strafe %5.2f, Turn %5.2f ", drive, strafe, turn);

@@ -46,7 +46,7 @@ public class SimpleAutoTest extends LinearOpMode
 
         waitForStart();
 
-        chassis.moveRobotStrafe(1.0,40.0);
+        chassis.moveRobotForward(0.2,60.0);
 
         //sleep(100000);
 

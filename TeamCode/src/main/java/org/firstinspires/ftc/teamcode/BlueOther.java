@@ -50,8 +50,8 @@ public class BlueOther extends LinearOpMode
             case RIGHT:
                 telemetry.addLine("RIGHT");
                 telemetry.update();
-                chassis.moveRobotForward(1.0,34);
-                chassis.moveRobotStrafe(0.5, -9);
+                chassis.moveRobotForward(1.0,34, 0.25);
+                chassis.moveRobotStrafe(0.4, -9, 0.25);
                 chassis.setArmPosition(500,0.3, true);
                 chassis.moveRobotForward(1.0, 18);
                 chassis.turnRobotToHeading(heading+90, 0.4);
@@ -59,7 +59,6 @@ public class BlueOther extends LinearOpMode
                 chassis.moveRobotStrafe(0.5, 17.5);
                 chassis.setArmPosition(6400, 1.0, false);
                 chassis.moveToApril(3,13.5,-5, 5);
-                chassis.turnRobotToHeading(heading+90, 0.4);
                 chassis.setArmPosition(6400, 1.0, true);
                 sleep(250);
                 chassis.drop();
@@ -71,7 +70,7 @@ public class BlueOther extends LinearOpMode
             case MIDDLE:
                 telemetry.addLine("MIDDLE");
                 telemetry.update();
-                chassis.moveRobotForward(1.0, 40);
+                chassis.moveRobotForward(1.0, 40, 0.25);
                 chassis.setArmPosition(500, 0.3, true);
                 chassis.moveRobotForward(0.5, 12);
                 chassis.turnRobotToHeading(heading+90, 0.4);
@@ -79,7 +78,6 @@ public class BlueOther extends LinearOpMode
                 chassis.moveRobotStrafe(0.5,26);
                 chassis.setArmPosition(6400, 1.0, false);
                 chassis.moveToApril(2,13.5,5, 3);
-                chassis.turnRobotToHeading(heading+90, 0.4);
                 chassis.setArmPosition(6400, 1.0, true);
                 sleep(250);
                 chassis.drop();
@@ -91,9 +89,9 @@ public class BlueOther extends LinearOpMode
             case LEFT:
                 telemetry.addLine("LEFT");
                 telemetry.update();
-                chassis.moveRobotForward(1.0,26);
+                chassis.moveRobotForward(1.0,26, 0.25);
                 chassis.turnRobotToHeading(heading-90, 0.4);
-                chassis.moveRobotForward(1.0,-10);
+                chassis.moveRobotForward(1.0,-10, 0.25);
                 chassis.setArmPosition(500, 0.7, true);
                 chassis.moveRobotForward(1.0,12);
                 chassis.moveRobotStrafe(1.0,24);
@@ -102,7 +100,6 @@ public class BlueOther extends LinearOpMode
                 chassis.setArmPosition(6400, 1.0, false);
                 chassis.moveRobotStrafe(1.0,30);
                 chassis.moveToApril(1,13.5,5, 3);
-                chassis.turnRobotToHeading(heading+90, 0.4);
                 chassis.setArmPosition(6400, 1.0, true);
                 sleep(250);
                 chassis.drop();
