@@ -50,51 +50,84 @@ public class BlueBackstage extends LinearOpMode
             case RIGHT:
                 telemetry.addLine("RIGHT");
                 telemetry.update();
-                sleep(1000);
-                chassis.moveRobotForward(0.5,26);
+                sleep(250);
+                chassis.moveRobotForward(1.0,26);
                 chassis.turnRobotToHeading(heading+90, 0.4);
-                chassis.moveRobotForward(0.5, -3);
+                chassis.moveRobotForward(1.0, -5);
                 chassis.setArmPosition(500,0.3, true);
-                chassis.moveRobotForward(0.5,22);
-                chassis.setArmPosition(6300, 1.0, false);
+                chassis.moveRobotForward(1.0,22);
+                chassis.setArmPosition(6400, 1.0, false);
                 chassis.moveToApril(3,13.5,-5, 5);
-                chassis.setArmPosition(6300,1.0, true);
-                sleep(500);
+                chassis.turnRobotToHeading(heading+90, 0.4);
+                chassis.setArmPosition(6400,1.0, true);
+                sleep(250);
                 chassis.drop();
                 sleep(500);
-                chassis.setArmPosition(5000, 0.2, true);
-                chassis.moveRobotForward(0.0,30);
+                chassis.setArmPosition(4000, 0.4, false);
+                chassis.moveRobotStrafe(0.5,30);
+                chassis.moveRobotForward(0.5,15);
                 break;
 
             case MIDDLE:
                 telemetry.addLine("MIDDLE");
                 telemetry.update();
-                sleep(1000);
-                chassis.moveRobotForward(0.5,40);
+                sleep(250);
+                chassis.moveRobotForward(1.0, 40.5);
                 chassis.setArmPosition(500, 0.3, true);
-                chassis.moveRobotForward(0.5,-17);
+                chassis.moveRobotForward(0.5, -12);
                 chassis.turnRobotToHeading(heading+90, 0.4);
-                chassis.setArmPosition(6300, 1.0, false);
-                chassis.moveRobotForward(0.5,20);
-                chassis.moveToApril(2,13.5,5, 5);
-                chassis.setArmPosition(6300, 1.0, true);
-                sleep(500);
+                chassis.moveRobotForward(0.5, 10);
+
+                /*
+                chassis.setArmPosition(6400, 1.0, false);
+
+                chassis.moveToApril(2,13.5,5, 3);
+                chassis.turnRobotToHeading(heading+90, 0.4);
+                chassis.setArmPosition(6400, 1.0, true);
+                sleep(250);
                 chassis.drop();
                 sleep(500);
-                chassis.setArmPosition(5000, 0.2, true);
+                chassis.setArmPosition(4000, 0.4, false);
+                chassis.moveRobotStrafe(0.5,24);
+                chassis.moveRobotForward(0.5, 15);
+
+                /*
+                chassis.moveRobotForward(1.0, 40.5);
+                chassis.setArmPosition(500, 0.3, true);
+                chassis.moveRobotForward(0.5, 8);
+                chassis.moveRobotStrafe(0.5,20.0);
+                chassis.turnRobotToHeading(heading+90, 0.4);
+                chassis.moveRobotStrafe(0.5,20);
+                chassis.setArmPosition(6400, 1.0, false);
+                chassis.moveToApril(2,13.5,5, 3);
+                chassis.turnRobotToHeading(heading+90, 0.4);
+                chassis.setArmPosition(6400, 1.0, true);
+                sleep(250);
+                chassis.drop();
+                sleep(500);
+                chassis.setArmPosition(4000, 0.4, false);
+                chassis.moveRobotStrafe(0.5,24);
+                chassis.moveRobotForward(0.5, 15);
+                */
                 break;
 
             case LEFT:
-                chassis.moveRobotForward(0.5,26);
+                telemetry.addLine("LEFT");
+                telemetry.update();
+                sleep(250);
+                chassis.moveRobotForward(1.0,26);
                 chassis.turnRobotToHeading(heading+90, 0.4);
-                chassis.moveRobotForward(0.5,19);
-                chassis.setArmPosition(6300, 0.7, false);
+                chassis.moveRobotForward(1.0,17);
+                chassis.setArmPosition(6400, 0.7, false);
                 chassis.moveToApril(1,13.5,2);
-                chassis.setArmPosition(6300, 0.7, true);
-                sleep(500);
+                chassis.turnRobotToHeading(heading+90, 0.4);
+                chassis.setArmPosition(6400, 0.7, true);
+                sleep(250);
                 chassis.drop();
                 sleep(500);
-                chassis.setArmPosition(5000, 0.7, true);
+                chassis.setArmPosition(4000, 0.4, false);
+                chassis.moveRobotStrafe(1.0,16);
+                chassis.moveRobotForward(0.5, 15);
                 break;
         }
     }

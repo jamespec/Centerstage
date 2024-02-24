@@ -312,8 +312,8 @@ public class OmniChassisWithVision
 
     public void moveRobotForward(double maxDrive, double targetInches)
     {
-        final double DRIVE_P = 0.0225;
-        final double DRIVE_I = 0.015;
+        final double DRIVE_P = 0.0375;
+        final double DRIVE_I = 0.02;
         final double STRAFE_P = 0.035;
         final double STRAFE_I = 0.02;
         final double MAX_STRAFE_CORRECT = 0.2;
@@ -358,7 +358,7 @@ public class OmniChassisWithVision
 
     public void moveRobotStrafe(double maxDrive, double targetInches)
     {
-        final double DRIVE_P = 0.03;
+        final double DRIVE_P = 0.0275;
         final double DRIVE_I = 0.01;
         final double STRAFE_P = 0.09;
         final double STRAFE_I = 0.015;
@@ -474,6 +474,11 @@ public class OmniChassisWithVision
     public void drop()
     {
         intake.setPosition(0);
+    }
+
+    public void partialDrop()
+    {
+        intake.setPosition(0.1);
     }
 
     public void launch()

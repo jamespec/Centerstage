@@ -117,6 +117,13 @@ public class OmniDriverTeleOp extends LinearOpMode {
             telemetry.addData("Arm Power", "%3.0f", armPower);
             telemetry.addData("Arm Position", "%d", chassis.getArmPosition() );
 
+
+            if (gamepad2.right_bumper) {
+                chassis.setArmPower(0.2);
+            }
+            if (gamepad2.left_bumper) {
+                chassis.setArmPower(-0.2);
+            }
             if (gamepad2.x) {
                 chassis.grab();
                 telemetry.addLine("Grab");
@@ -125,6 +132,7 @@ public class OmniDriverTeleOp extends LinearOpMode {
                 chassis.drop();
                 telemetry.addLine("Drop");
             }
+
             if (gamepad2.back) {
                 chassis.launch();
                 telemetry.addLine("Launch");
