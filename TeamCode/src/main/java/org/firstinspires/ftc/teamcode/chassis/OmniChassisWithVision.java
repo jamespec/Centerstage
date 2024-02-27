@@ -533,11 +533,30 @@ public class OmniChassisWithVision
         return arm.getCurrentPosition();
     }
 
+    boolean armHitStop = false;
     public void setArmPower(double power)
     {
-        arm.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        arm.setPower(power);
-        telemetry.addData("Arm Current: ", "%5.2f", arm.getCurrent(CurrentUnit.MILLIAMPS));
+        double mamps=0.0;
+
+        // Release the stop if zero power is requested.
+        if(armHitStop) {
+            if (Math.abs(power) < 0.05)
+                armHitStop = false;
+            else
+                telemetry.addLine("Arm at stop!");
+        }
+        else {
+            arm.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            arm.setPower(power);
+
+            mamps = arm.getCurrent(CurrentUnit.MILLIAMPS);
+            if (mamps > 2000) {
+                arm.setPower(0.0);
+                armHitStop = true;
+            }
+
+            telemetry.addData("Arm Current: ", "%5.2f", mamps);
+        }
     }
 
     private void setManualExposure(int exposureMS, int gain)
