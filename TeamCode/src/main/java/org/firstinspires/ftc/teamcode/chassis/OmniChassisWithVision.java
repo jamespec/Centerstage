@@ -45,11 +45,9 @@ import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
 import org.firstinspires.ftc.teamcode.vision.MarkerVisionProcessor;
-import org.firstinspires.ftc.teamcode.vision.PixelVisionProcessor;
 import org.firstinspires.ftc.vision.VisionPortal;
 import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
-import org.opencv.core.Point;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -66,7 +64,7 @@ public class OmniChassisWithVision
     private final VisionPortal visionPortal;
     private final AprilTagProcessor aprilTagVisionProcessor;
     private final MarkerVisionProcessor markerVisionProcessor;
-    private final PixelVisionProcessor pixelVisionProcessor;
+    // private final PixelVisionProcessor pixelVisionProcessor;
 
     private final IMU     imu;              // Control/Expansion Hub IMU
     private final DcMotor leftFrontDrive;   //  Used to control the left front drive wheel
@@ -85,7 +83,7 @@ public class OmniChassisWithVision
         this.telemetry = telemetry;
 
         markerVisionProcessor = new MarkerVisionProcessor();
-        pixelVisionProcessor = new PixelVisionProcessor();
+//        pixelVisionProcessor = new PixelVisionProcessor();
 
         // Create the AprilTag processor by using a builder.
         aprilTagVisionProcessor = new AprilTagProcessor.Builder().build();
@@ -108,8 +106,8 @@ public class OmniChassisWithVision
         if( (visionMask & AprilTag) > 0 )
             visionBuilder.addProcessor(aprilTagVisionProcessor);
 
-        if( (visionMask & Pixel) > 0 )
-            visionBuilder.addProcessor(pixelVisionProcessor);
+//        if( (visionMask & Pixel) > 0 )
+//            visionBuilder.addProcessor(pixelVisionProcessor);
 
         visionPortal = visionBuilder.build();
 
@@ -533,12 +531,38 @@ public class OmniChassisWithVision
         return arm.getCurrentPosition();
     }
 
+
+
+    boolean armHitStop = false;
     public void setArmPower(double power)
     {
-        arm.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        arm.setPower(power);
-        telemetry.addData("Arm Current: ", "%5.2f", arm.getCurrent(CurrentUnit.MILLIAMPS));
+        // Release the stop if zero power is requested.
+        if(armHitStop) {
+            if (Math.abs(power) < 0.05)
+                armHitStop = false;
+            else
+                telemetry.addLine("Arm at stop!");
+        }
+        else {
+            arm.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            arm.setPower(power);
+
+            double mamps = arm.getCurrent(CurrentUnit.MILLIAMPS);
+            if (mamps > 4000) {
+                arm.setPower(0.0);
+                armHitStop = true;
+            }
+
+            telemetry.addData("Arm Current: ", "%5.2f", mamps);
+        }
     }
+
+//    public void setArmPower(double power)
+//    {
+//        arm.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+//        arm.setPower(power);
+//        telemetry.addData("Arm Current: ", "%5.2f", arm.getCurrent(CurrentUnit.MILLIAMPS));
+//    }
 
     private void setManualExposure(int exposureMS, int gain)
     {
@@ -567,7 +591,7 @@ public class OmniChassisWithVision
         return markerVisionProcessor.getLocation();
     }
 
-    public Point getPixelCenter() { return pixelVisionProcessor.getCenter(); }
+    // public Point getPixelCenter() { return pixelVisionProcessor.getCenter(); }
 
     private void sleep( int milli ) {
         try {

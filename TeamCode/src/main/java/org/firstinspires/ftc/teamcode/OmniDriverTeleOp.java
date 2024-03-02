@@ -34,7 +34,6 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.teamcode.chassis.OmniChassisWithVision;
-import org.opencv.core.Point;
 
 @TeleOp(name = "OmniDriverTeleOp")
 public class OmniDriverTeleOp extends LinearOpMode {
@@ -56,39 +55,8 @@ public class OmniDriverTeleOp extends LinearOpMode {
 
         waitForStart();
 
-        while (opModeIsActive()) {
-            // Trying new Fast/Slow controller.
-            // Left Joystick is full power move
-            // Right Joystick is half power move
-            // Left/Right triggers turn
-            // if both right and left deflected use right (slow)
-            if( gamepad1.left_bumper ) {
-                Point center = chassis.getPixelCenter();
-                if( center != null ) {
-                    strafe = 304.0 - center.x;
-                    drive = 425.0 - center.y;
-                    telemetry.addData("Errors - ", "Drive: %5.2f  Strafe: %5.2f", drive, strafe);
-                    if (Math.abs(strafe) > 10 || Math.abs(drive) > 10) {
-                        drive = Range.clip((drive * 0.001) + Math.signum(drive) * 0.05, -0.3, 0.3);
-                        strafe = Range.clip((strafe * 0.001) + Math.signum(strafe) * 0.05, -0.2, 0.2);
-                        telemetry.addData("Powers - ", "Drive: %5.2f  Strafe: %5.2f", drive, strafe);
-                        chassis.moveRobot(drive, strafe, 0.0);
-                    } else {
-                        chassis.moveRobot(0.0, 0.0, 0.0);
-                        chassis.drop();
-                        chassis.setArmPosition(7500, 1.0, true);
-                        chassis.setArmPosition(7780, 0.2, true);
-                        sleep(1000);
-                        chassis.grab();
-                        sleep(1000);
-                        chassis.setArmPosition(6200, 0.3, true);
-                    }
-                    lastHeading = chassis.getHeading();
-                }
-                telemetry.update();
-                continue;
-            }
-
+        while (opModeIsActive())
+        {
             if (Math.abs(gamepad1.right_stick_x) > 0.01 || Math.abs(gamepad1.right_stick_y) > 0.01) {
                 drive = -gamepad1.right_stick_y / 3.0;  // Reduce drive rate to 33%.
                 strafe = -gamepad1.right_stick_x / 3.0;  // Reduce strafe rate to 33%.
@@ -137,10 +105,6 @@ public class OmniDriverTeleOp extends LinearOpMode {
                 chassis.launch();
                 telemetry.addLine("Launch");
             }
-
-            Point center = chassis.getPixelCenter();
-            if( center != null )
-                telemetry.addData("Center: ", "(%5.1f, %5.1f)", center.x, center.y );
 
             telemetry.update();
             sleep(10);
