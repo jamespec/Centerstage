@@ -534,6 +534,7 @@ public class OmniChassisWithVision
     }
 
     boolean armHitStop = false;
+    boolean isArmCalibrated = false;
     public void setArmPower(double power)
     {
         double mamps=0.0;
@@ -550,13 +551,19 @@ public class OmniChassisWithVision
             arm.setPower(power);
 
             mamps = arm.getCurrent(CurrentUnit.MILLIAMPS);
-            if (mamps > 2000) {
+            if (mamps > 4000) {
                 arm.setPower(0.0);
                 armHitStop = true;
+                isArmCalibrated = true;
+                arm.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
             }
 
             telemetry.addData("Arm Current: ", "%5.2f", mamps);
         }
+    }
+
+    public boolean isArmCalibrated() {
+        return isArmCalibrated;
     }
 
     private void setManualExposure(int exposureMS, int gain)

@@ -65,25 +65,28 @@ public class OmniDriverTeleOp extends LinearOpMode {
             if( gamepad1.left_bumper ) {
                 Point center = chassis.getPixelCenter();
                 if( center != null ) {
-                    strafe = 304.0 - center.x;
-                    drive = 425.0 - center.y;
-                    telemetry.addData("Errors - ", "Drive: %5.2f  Strafe: %5.2f", drive, strafe);
-                    if (Math.abs(strafe) > 10 || Math.abs(drive) > 10) {
-                        drive = Range.clip((drive * 0.001) + Math.signum(drive) * 0.05, -0.3, 0.3);
-                        strafe = Range.clip((strafe * 0.001) + Math.signum(strafe) * 0.05, -0.2, 0.2);
-                        telemetry.addData("Powers - ", "Drive: %5.2f  Strafe: %5.2f", drive, strafe);
-                        chassis.moveRobot(drive, strafe, 0.0);
-                    } else {
-                        chassis.moveRobot(0.0, 0.0, 0.0);
+                    double driveInchError = (425 - center.y)/6.50;   // 14 pixels to an inch in forward direction
+                    double strafeInchError = (375 - center.x)/27.0;   // 27 pixel to an inch in strafe direction
+                    telemetry.addData("Errors - ", "Drive: %5.2f  Strafe: %5.2f", driveInchError, strafeInchError);
+                    telemetry.addLine("Arm Calibrated: " + (chassis.isArmCalibrated() ? "Yes" : "No" ));
+                    telemetry.update();
+                    sleep(1000);
+
+                    if( chassis.isArmCalibrated() ) {
                         chassis.drop();
-                        chassis.setArmPosition(7500, 1.0, true);
-                        chassis.setArmPosition(7780, 0.2, true);
+                        chassis.setArmPosition(-1000, 1.0, false);
+                    }
+
+                    chassis.moveRobotForward(0.3, driveInchError );
+                    chassis.moveRobotStrafe(0.3, strafeInchError );
+
+                    if( chassis.isArmCalibrated() ) {
+                        chassis.setArmPosition(-500, 0.3, true);
                         sleep(1000);
                         chassis.grab();
                         sleep(1000);
-                        chassis.setArmPosition(6200, 0.3, true);
+                        chassis.setArmPosition(-1000, 0.3, true);
                     }
-                    lastHeading = chassis.getHeading();
                 }
                 telemetry.update();
                 continue;

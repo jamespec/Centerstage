@@ -106,13 +106,17 @@ public class PixelVisionProcessor implements VisionProcessor
             contour.convertTo(mat2f, CvType.CV_32F);
             Imgproc.minEnclosingCircle(mat2f, center, radius);
 
-            if( radius[0] > 15 && center.y > output.height()/2.0 ) {
+            if( radius[0] > 40 &&
+                center.x > output.width() * 0.20 &&
+                center.x < output.width() * 0.80 &&
+                center.y > output.height() * 0.60 )
+            {
                 contourCount++;
 
                 if( drawCandidates ) {
                     // draw the contour and center of the shape on the image
                     Imgproc.drawContours(output, contours, i, new Scalar(0, 255, 0), 2);
-                    String s = "(" + center.x + ", " + center.y + ")";
+                    String s = String.format("(%3.0f, %3.0f) R: %3.0f", center.x, center.y, radius[0] );
                     center.x += 30;
                     Imgproc.putText(output, s, center, Imgproc.FONT_HERSHEY_PLAIN, 1.0, new Scalar(255, 255, 255), 2);
                 }
